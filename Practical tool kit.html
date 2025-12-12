@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>实用工具 · Practical tool kit</title>
+  <style>
+    body{font-family:Inter, "Segoe UI", Roboto, Arial, Helvetica, sans-serif;background:#071126;color:#e6eef6;margin:0;padding:28px}
+    a{color:#7dd3fc;text-decoration:none}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+
+/* 新增：仿 Surfcg 风格 网格卡片 + 搜索 + 主题色 */
+    .topbar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      width:100%;
+      margin-bottom:18px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;
+    }
+    .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:800;color:#021}
+    h1{font-size:20px;margin:0}
+    .subtitle{color:#9fb0c8;font-size:13px}
+
+    .search{
+      margin-left:auto;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .search input{
+      width:360px;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(125,211,252,0.12);
+      background:rgba(255,255,255,0.02);
+      color:var(--text, #e6eef6);
+      outline:none;
+    }
+    .btn{
+      padding:10px 14px;border-radius:10px;background:linear-gradient(90deg,#06b6d4,#7c3aed);color:#021;font-weight:600;border:none;cursor:pointer;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:16px;
+      margin-top:18px;
+    }
+
+    .tool{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid rgba(125,211,252,0.06);
+      border-radius:12px;
+      padding:14px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .tool:hover{ transform:translateY(-6px); box-shadow:0 10px 30px rgba(2,6,23,0.6); border-color:rgba(125,211,252,0.18) }
+    .tool .icon{
+      width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#0ea5b5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:20px;color:#021;font-weight:700;
+      flex:0 0 56px;
+    }
+    .tool h3{margin:0 0 6px 0;font-size:16px}
+    .tool p{margin:0;color:#9fb0c8;font-size:13px;line-height:1.4}
+    .tool .meta{margin-top:8px;font-size:12px;color:#8da7bd}
+    .tool a.action{display:inline-block;margin-top:10px;padding:8px 12px;border-radius:8px;background:rgba(125,211,252,0.06);color:#7dd3fc;border:1px solid rgba(125,211,252,0.06);font-size:13px}
+
+    footer{margin-top:24px;color:#7f97a8;font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="mark">PT</div>
+      <div>
+        <h1>实用工具 · Practical tool kit</h1>
+        <div class="subtitle">快速访问常用在线工具 — 仿 Surfcg 简洁卡片风格</div>
+      </div>
+    </div>
+
+    <nav><a href="index.html" style="color:#9fb0c8">返回导航</a></nav>
+  </header>
+
+  <!-- 新增顶部搜索与快捷操作 -->
+  <div class="topbar">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn" onclick="location.href='Practical tool kit.html'">工具总览</button>
+      <a class="btn" href="English learning.html" target="_blank" rel="noopener noreferrer">English 学习</a>
+    </div>
+
+    <div class="search" role="search" aria-label="工具搜索">
+      <input id="toolSearch" placeholder="搜索工具（示例：color / wormhole）" />
+      <button class="btn" id="searchBtn">搜索</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="grid" id="toolGrid">
+      <!-- 已有占位工具，改为卡片展示 -->
+      <div class="tool">
+        <div class="icon">NB</div>
+        <div>
+          <h3>本地笔记</h3>
+          <p>打开 / 管理本地学习笔记与单词本（使用 localStorage 保存，页面占位）。</p>
+          <div class="meta">本地工具 · 无需联网</div>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="icon">FX</div>
+        <div>
+          <h3>格式转换</h3>
+          <p>文本清理、大小写转换、行列互换等实用文本处理工具（占位）。</p>
+          <div class="meta">文本工具 · 占位</div>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="icon">EH</div>
+        <div>
+          <h3>English 学习助手</h3>
+          <p>集成的阅读与翻译助手，便于同时打开学习面板。</p>
+          <a class="action" href="English learning.html" target="_blank" rel="noopener noreferrer">打开 English 学习助手</a>
+          <div class="meta">站内 · 学习</div>
+        </div>
+      </div>
+
+      <!-- 新增：Wormhole (文件传输 / 实用 web 工具) -->
+      <div class="tool" data-keywords="wormhole 传输 文件 分享">
+        <div class="icon">WH</div>
+        <div>
+          <h3>Wormhole</h3>
+          <p>快速、加密的文件传输服务，拖放并生成临时下载链接，适合传递学习资料与大文件。</p>
+          <a class="action" href="https://wormhole.app/" target="_blank" rel="noopener noreferrer">打开 Wormhole.app</a>
+          <div class="meta">外部 · 文件传输</div>
+        </div>
+      </div>
+
+      <!-- 新增：Toolhelper 屏幕取色 -->
+      <div class="tool" data-keywords="color 取色 pick color 屏幕 颜色">
+        <div class="icon">PC</div>
+        <div>
+          <h3>PickScreenColor（Toolhelper）</h3>
+          <p>在线屏幕取色工具，快速获取屏幕颜色值（十六进制 / RGB），便于配色与设计参考。</p>
+          <a class="action" href="https://www.toolhelper.cn/Color/PickScreenColor" target="_blank" rel="noopener noreferrer">打开 取色工具</a>
+          <div class="meta">外部 · 设计</div>
+        </div>
+      </div>
+
+      <!-- 保留并展示外部常用链接 -->
+      <div class="tool" data-keywords="surfcg 社区">
+        <div class="icon">SC</div>
+        <div>
+          <h3>Surfcg</h3>
+          <p>3D 与 CG 社区，快速访问资源与讨论（示例站点风格灵感来源）。</p>
+          <a class="action" href="https://www.surfcg.com/index?by=2" target="_blank" rel="noopener noreferrer">访问 Surfcg</a>
+          <div class="meta">外部 · 社区</div>
+        </div>
+      </div>
+
+      <div class="tool">
+        <div class="icon">MD</div>
+        <div>
+          <h3>Modeling workspace</h3>
+          <p>建模学习分支入口（站内页面）。</p>
+          <a class="action" href="Modeling workspace.html" target="_blank" rel="noopener noreferrer">打开建模学习</a>
+          <div class="meta">站内 · 学习</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>Practical tool kit — 本地页面，已添加 Wormhole 与 PickScreenColor 快捷入口。使用搜索可筛选卡片（演示）。</footer>
+
+  <script>
+    // 简单搜索功能：匹配标题或 data-keywords
+    (function(){
+      const grid = document.getElementById('toolGrid');
+      const items = Array.from(grid.querySelectorAll('.tool'));
+      const input = document.getElementById('toolSearch');
+      const btn = document.getElementById('searchBtn');
+
+      function doSearch(q){
+        q = (q||'').trim().toLowerCase();
+        items.forEach(item=>{
+          const title = (item.querySelector('h3')?.textContent||'').toLowerCase();
+          const kws = (item.getAttribute('data-keywords')||'').toLowerCase();
+          const matched = !q || title.includes(q) || kws.includes(q);
+          item.style.display = matched ? '' : 'none';
+        });
+      }
+
+      btn.addEventListener('click', ()=> doSearch(input.value));
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doSearch(input.value) });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,3159 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>全能英语学习浏览器 · 智能学习助手</title>
+
+  <style>
+    /* 现代化浏览器主题 */
+    :root {
+      --bg-main: #0f172a;
+      --bg-sidebar: #1e293b;
+      --bg-card: #334155;
+      --bg-input: #475569;
+      --accent-primary: #3b82f6;
+      --accent-secondary: #8b5cf6;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --border: #475569;
+      --radius: 12px;
+      --shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      --transition: all 0.3s ease;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部工具栏 */
+    .top-toolbar {
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 200px;
+    }
+
+    .logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-size: 16px;
+    }
+
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-text .subtitle {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    /* 搜索栏容器 */
+    .search-container {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+      min-width: 300px;
+      max-width: 800px;
+    }
+
+    /* 地址栏 */
+    .url-bar {
+      display: flex;
+      gap: 8px;
+      flex: 2;
+    }
+
+    .url-input-container {
+      flex: 1;
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-width: 200px;
+    }
+
+    .url-prefix {
+      padding: 0 12px;
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--text-muted);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    #urlInput {
+      flex: 1;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 14px;
+      outline: none;
+      min-width: 100px;
+    }
+
+    /* 中文搜索栏 */
+    .cn-search-bar {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .cn-search-container {
+      flex: 1;
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .search-engine-selector {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0 8px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .search-engine-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--accent-primary);
+    }
+
+    .search-engine-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      min-width: 150px;
+      display: none;
+      z-index: 1000;
+      box-shadow: var(--shadow);
+    }
+
+    .search-engine-dropdown.show {
+      display: block;
+    }
+
+    .search-engine-option {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .search-engine-option:hover {
+      background: var(--bg-input);
+    }
+
+    .search-engine-option.active {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    #cnSearchInput {
+      flex: 1;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      min-width: 100px;
+    }
+
+    /* 控制按钮 */
+    .control-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .control-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .control-btn.active {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    /* 主内容区 */
+    .main-content {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* 左侧：浏览器窗口 */
+    .browser-panel {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background: #000;
+    }
+
+    /* 浏览器标签页 */
+    .browser-tabs {
+      display: flex;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      padding: 0 8px;
+      gap: 2px;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .browser-tab {
+      padding: 10px 20px;
+      background: var(--bg-input);
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      min-width: 120px;
+      max-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .browser-tab.active {
+      background: var(--bg-main);
+      color: var(--text-primary);
+      border-color: var(--border);
+    }
+
+    .tab-favicon {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      background: var(--accent-primary);
+    }
+
+    .tab-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tab-close {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: var(--transition);
+    }
+
+    .tab-close:hover {
+      background: var(--accent-danger);
+      color: white;
+    }
+
+    .new-tab-btn {
+      width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 8px;
+      margin: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .new-tab-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* 网站框架 */
+    .website-frame {
+      flex: 1;
+      border: none;
+      background: white;
+    }
+
+    /* 右侧：学习助手面板 */
+    .assistant-panel {
+      flex: 1;
+      min-width: 380px;
+      max-width: 450px;
+      background: var(--bg-sidebar);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .assistant-header {
+      padding: 16px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* 标签页切换 */
+    .tab-container {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .assistant-tab {
+      flex: 1;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .assistant-tab:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .assistant-tab.active {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    /* 网站快捷导航 */
+    .quick-nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .nav-card {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .nav-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+    }
+
+    .nav-icon {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 8px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .nav-title {
+      font-size: 12px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .nav-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* 功能面板 */
+    .function-panel {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .panel-section {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 20px;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .panel-section h3 {
+      margin-bottom: 16px;
+      color: var(--text-primary);
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-section h3 svg {
+      color: var(--accent-primary);
+    }
+
+    /* 翻译工具样式 */
+    .translation-tool {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .language-selector {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .swap-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: var(--transition);
+    }
+
+    .swap-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    select, textarea {
+      padding: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    select:focus, textarea:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .translate-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .translation-result {
+      min-height: 120px;
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+
+    /* 笔记工具样式 */
+    .notes-tool textarea {
+      min-height: 150px;
+      margin-bottom: 12px;
+    }
+
+    .note-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .notes-list {
+      margin-top: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .note-item {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--accent-primary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .note-item:hover {
+      background: var(--glass);
+    }
+
+    .note-time {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .note-content {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* AI浏览器样式 */
+    .ai-browser-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .ai-controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .ai-frame {
+      flex: 1;
+      border: none;
+      background: white;
+      border-radius: var(--radius);
+      min-height: 500px;
+    }
+
+    .ai-url-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .ai-url-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .ai-url-input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .ai-preset-buttons {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ai-preset-btn {
+      padding: 6px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .ai-preset-btn:hover {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .ai-preset-btn.active {
+      background: var(--accent-primary);
+      color: white;
+      border-color: var(--accent-primary);
+    }
+
+    /* 剪切板监听器样式 */
+    .clipboard-listener {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .clipboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .clipboard-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .toggle-switch.active {
+      background: var(--accent-primary);
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+
+    .toggle-switch.active .toggle-slider {
+      transform: translateX(20px);
+    }
+
+    .clipboard-preview {
+      min-height: 60px;
+      max-height: 120px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .clipboard-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* 词汇学习样式 */
+    .vocabulary-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .vocab-item {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vocab-word {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .vocab-meaning {
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .vocab-btn {
+      padding: 4px 12px;
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-success);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+
+    /* 教程面板样式 */
+    .tutorial-content {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .tutorial-step {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tutorial-step:last-child {
+      border-bottom: none;
+    }
+
+    .step-number {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 24px;
+      margin-right: 8px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .step-title {
+      display: inline;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .step-desc {
+      margin-top: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .step-code {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 8px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      color: var(--accent-primary);
+    }
+
+    /* 网站管理器样式 */
+    .website-manager {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .site-category {
+      margin-bottom: 12px;
+    }
+
+    .category-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .site-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .site-card {
+      background: var(--bg-input);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .site-card:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+    }
+
+    .site-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .site-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .site-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* 通知样式 */
+    .notification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      border-left: 4px solid var(--accent-primary);
+      box-shadow: var(--shadow);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      max-width: 400px;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    /* 加载动画 */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 1200px) {
+      .main-content {
+        flex-direction: column;
+      }
+      
+      .assistant-panel {
+        min-width: 100%;
+        height: 40vh;
+        max-width: 100%;
+      }
+      
+      .search-container {
+        min-width: 200px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .top-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      
+      .brand {
+        min-width: auto;
+      }
+      
+      .search-container {
+        flex-direction: column;
+        min-width: auto;
+      }
+      
+      .url-bar, .cn-search-bar {
+        min-width: auto;
+      }
+      
+      .quick-nav {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .ai-preset-buttons {
+        flex-direction: column;
+      }
+    }
+
+    /* 滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent-primary);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 顶部工具栏 -->
+    <div class="top-toolbar">
+      <div class="brand">
+        <div class="logo">学</div>
+        <div class="brand-text">
+          <h1>全能学习浏览器</h1>
+          <div class="subtitle">自由浏览 · 智能辅助 · 高效学习</div>
+        </div>
+      </div>
+
+      <!-- 新增：返回主菜单 -->
+      <button class="control-btn" id="mainMenuBtn" title="返回主菜单" aria-label="返回主菜单" style="margin-left:6px;">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8.354 1.146a.5.5 0 0 0-.708 0L1.646 7.146a.5.5 0 0 0 .708.708L8 2.207V14.5a.5.5 0 0 0 1 0V2.207l5.646 5.647a.5.5 0 1 0 .708-.708L8.354 1.146z"/>
+        </svg>
+      </button>
+      
+      <!-- 浏览器控制按钮 -->
+      <div style="display: flex; gap: 4px;">
+        <button class="control-btn" id="backBtn" title="后退">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm3.5 7.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z"/>
+          </svg>
+        </button>
+        <button class="control-btn" id="forwardBtn" title="前进">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"/>
+          </svg>
+        </button>
+        <button class="control-btn" id="reloadBtn" title="刷新">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+          </svg>
+        </button>
+        <button class="control-btn" id="homeBtn" title="主页">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4.5a.5.5 0 0 0 .5-.5v-4h2v4a.5.5 0 0 0 .5.5H14a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146zM2.5 14V7.707l5.5-5.5 5.5 5.5V14H10v-4a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v4H2.5z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 搜索容器 -->
+      <div class="search-container">
+        <!-- 地址栏 -->
+        <div class="url-bar">
+          <div class="url-input-container">
+            <div class="url-prefix">https://</div>
+            <input 
+              type="text" 
+              id="urlInput"
+              placeholder="输入网址或从下面选择学习网站"
+              autocomplete="off"
+            >
+          </div>
+          <button class="control-btn" id="goBtn" title="前往">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z"/>
+              <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 中文搜索栏 -->
+        <div class="cn-search-bar">
+          <div class="cn-search-container">
+            <div class="search-engine-selector" id="searchEngineSelector">
+              <div class="search-engine-icon" id="currentSearchEngineIcon">B</div>
+              <div class="search-engine-dropdown" id="searchEngineDropdown">
+                <!-- 搜索引擎选项会动态生成 -->
+              </div>
+            </div>
+            <input 
+              type="text" 
+              id="cnSearchInput"
+              placeholder="中文搜索（百度）"
+              autocomplete="off"
+            >
+          </div>
+          <button class="control-btn" id="cnSearchBtn" title="中文搜索">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 右侧控制按钮 -->
+      <div style="display: flex; gap: 8px;">
+        <button class="control-btn" id="bookmarkBtn" title="添加书签">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 2.815A.5.5 0 0 1 2 15.5V2zm2-1a1 1 0 0 0-1 1v12.566l4.723-2.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1H4z"/>
+          </svg>
+        </button>
+        <button class="control-btn" id="fullscreenBtn" title="全屏">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1h-4zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zM.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5zm15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <!-- 左侧：浏览器窗口 -->
+      <div class="browser-panel">
+        <!-- 浏览器标签页 -->
+        <div class="browser-tabs" id="browserTabs">
+          <!-- 标签页会动态生成 -->
+        </div>
+
+        <!-- 网站框架 -->
+        <iframe 
+          src="https://ieltscat.xdf.cn/practice/read" 
+          class="website-frame"
+          id="websiteFrame"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+          allow="clipboard-write"
+        ></iframe>
+      </div>
+
+      <!-- 右侧：学习助手面板 -->
+      <div class="assistant-panel">
+        <div class="assistant-header">
+          <!-- 助手标签页 -->
+          <div class="tab-container">
+            <button class="assistant-tab active" data-tab="translate">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+                <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3.5a2 2 0 0 1-1.967-1.75L.115 6.495A1.48 1.48 0 0 1 0 5.633V2zm2-1a1 1 0 0 0-1 1v3.651a.495.495 0 0 0 .41.488c.246.043.49.19.692.382l1.108.96L4.09 8H2V1z"/>
+              </svg>
+              翻译
+            </button>
+            <button class="assistant-tab" data-tab="notes">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
+              </svg>
+              笔记
+            </button>
+            <button class="assistant-tab" data-tab="ai">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M9.5 2.672a.5.5 0 1 0 1 0V.843a.5.5 0 0 0-1 0v1.829Zm4.5.035A.5.5 0 0 0 13.293 2L12 3.293a.5.5 0 1 0 .707.707l1.293-1.293a.5.5 0 0 0 0-.707ZM2.707 2.707A.5.5 0 0 0 2 2.293L.707 3.586a.5.5 0 0 0 0 .708l1.293 1.293A.5.5 0 0 0 3.707 4.42L2.414 3.124a.5.5 0 0 0-.707-.707Zm12 10.586A.5.5 0 0 0 14 13.707l1.293-1.293a.5.5 0 0 0 0-.707l-1.293-1.293a.5.5 0 0 0-.707.707l1.293 1.293a.5.5 0 0 0 .707 0ZM2.293 13.707a.5.5 0 0 0 .707.707l1.293-1.293a.5.5 0 0 0 0-.707l-1.293-1.293a.5.5 0 0 0-.707.707l1.293 1.293a.5.5 0 0 0 0 .707ZM8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0Z"/>
+              </svg>
+              AI助手
+            </button>
+            <button class="assistant-tab" data-tab="websites">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4.5 5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM3 4.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H8.5v3a1.5 1.5 0 0 1 1.5 1.5h5.5a.5.5 0 0 1 0 1H10A1.5 1.5 0 0 1 8.5 14h-1A1.5 1.5 0 0 1 6 12.5H.5a.5.5 0 0 1 0-1H6A1.5 1.5 0 0 1 7.5 10v-3H2a2 2 0 0 1-2-2V4zm1 0v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1zm6 7.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5z"/>
+              </svg>
+              网站
+            </button>
+            <button class="assistant-tab" data-tab="tutorial">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M9.5 0a.5.5 0 0 1 .5.5V2h1.5A1.5 1.5 0 0 1 13 3.5V4h1.5A1.5 1.5 0 0 1 16 5.5v8a1.5 1.5 0 0 1-1.5 1.5H9a6 6 0 0 0 1.5-1v1a7 7 0 0 1-1.5.5H1.5A1.5 1.5 0 0 1 0 13.5v-8A1.5 1.5 0 0 1 1.5 4H3v-.5A1.5 1.5 0 0 1 4.5 2H6V.5a.5.5 0 0 1 1 0V2h2V.5a.5.5 0 0 1 .5-.5zM4.5 3a.5.5 0 0 0-.5.5V4h4v-.5a.5.5 0 0 0-.5-.5h-3zM1.5 4a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5H9a.5.5 0 0 0 .5-.5v-8A.5.5 0 0 0 9 4H1.5z"/>
+              </svg>
+              教程
+            </button>
+          </div>
+
+          <!-- 快捷导航 -->
+          <div class="quick-nav" id="quickNav">
+            <!-- 快捷导航会动态生成 -->
+          </div>
+        </div>
+
+        <!-- 功能面板 -->
+        <div class="function-panel" id="functionPanel">
+          <!-- 各个功能面板会动态生成 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+      <div id="notificationMessage"></div>
+    </div>
+  </div>
+
+  <!-- 网站数据模板 -->
+  <template id="siteCardTemplate">
+    <div class="nav-card" data-url="">
+      <div class="nav-icon"></div>
+      <div class="nav-title"></div>
+      <div class="nav-desc"></div>
+    </div>
+  </template>
+
+  <script>
+    (function() {
+      'use strict';
+
+      // 状态管理
+      const state = {
+        currentTab: 0,
+        tabs: [
+          {
+            id: 0,
+            title: '雅思阅读练习',
+            url: 'https://ieltscat.xdf.cn/practice/read',
+            favicon: 'IELTS',
+            active: true
+          }
+        ],
+        currentAssistantTab: 'translate',
+        bookmarks: [],
+        notes: [],
+        history: [],
+        currentWebsiteType: 'ielts',
+        selectedText: '', // 存储选中的文本
+        selectedTextContext: '', // 存储选中文本的上下文
+        clipboardText: '', // 存储剪切板文本
+        isClipboardListenerActive: false, // 剪切板监听器状态
+        currentSearchEngine: 'baidu', // 当前搜索引擎
+        currentAIWebsite: 'deepseek', // 当前AI网站
+        clipboardHistory: [] // 剪切板历史记录
+      };
+
+      // 搜索引擎配置
+      const searchEngines = {
+        baidu: {
+          name: '百度',
+          icon: 'B',
+          url: 'https://www.baidu.com/s?wd=',
+          color: '#2932e1'
+        },
+        google: {
+          name: '谷歌',
+          icon: 'G',
+          url: 'https://www.google.com/search?q=',
+          color: '#4285f4'
+        },
+        bing: {
+          name: '必应',
+          icon: 'B',
+          url: 'https://www.bing.com/search?q=',
+          color: '#008373'
+        },
+        sogou: {
+          name: '搜狗',
+          icon: 'S',
+          url: 'https://www.sogou.com/web?query=',
+          color: '#f60'
+        }
+      };
+
+      // AI网站配置
+      const aiWebsites = {
+        deepseek: {
+          name: 'DeepSeek',
+          url: 'https://chat.deepseek.com',
+          icon: 'D',
+          color: '#8b5cf6'
+        },
+        chatgpt: {
+          name: 'ChatGPT',
+          url: 'https://chat.openai.com',
+          icon: 'C',
+          color: '#10a37f'
+        },
+        claude: {
+          name: 'Claude',
+          url: 'https://claude.ai',
+          icon: 'C',
+          color: '#d4770c'
+        },
+        gemini: {
+          name: 'Gemini',
+          url: 'https://gemini.google.com',
+          icon: 'G',
+          color: '#4285f4'
+        },
+        moonshot: {
+          name: '月之暗面',
+          url: 'https://kimi.moonshot.cn',
+          icon: 'K',
+          color: '#ef4444'
+        },
+        qianwen: {
+          name: '通义千问',
+          url: 'https://tongyi.aliyun.com',
+          icon: 'Q',
+          color: '#3b82f6'
+        },
+        wenxin: {
+          name: '文心一言',
+          url: 'https://yiyan.baidu.com',
+          icon: 'W',
+          color: '#2932e1'
+        }
+      };
+
+      // 预定义的学习网站
+      const learningWebsites = {
+        ielts: {
+          name: '雅思学习',
+          sites: [
+            { name: '雅思阅读练习', url: 'https://ieltscat.xdf.cn/practice/read', icon: 'R', desc: '新东方雅思阅读' },
+            { name: '雅思听力练习', url: 'https://ieltscat.xdf.cn/practice/listen', icon: 'L', desc: '新东方雅思听力' },
+            { name: '雅思写作指导', url: 'https://ielts.koolearn.com/write/', icon: 'W', desc: '雅思写作练习' },
+            { name: '雅思口语素材', url: 'https://www.ielts.org/prepare/free-practice-tests', icon: 'S', desc: '官方口语练习' }
+          ]
+        },
+        english: {
+          name: '综合英语',
+          sites: [
+            { name: 'BBC Learning', url: 'https://www.bbc.co.uk/learningenglish', icon: 'B', desc: 'BBC英语学习' },
+            { name: 'VOA Learning', url: 'https://learningenglish.voanews.com', icon: 'V', desc: 'VOA慢速英语' },
+            { name: 'TED Talks', url: 'https://www.ted.com/talks', icon: 'T', desc: 'TED演讲学习' },
+            { name: 'Duolingo', url: 'https://www.duolingo.com', icon: 'D', desc: '多邻国英语' }
+          ]
+        },
+        vocabulary: {
+          name: '词汇记忆',
+          sites: [
+            { name: 'Vocabulary.com', url: 'https://www.vocabulary.com', icon: 'V', desc: '词汇练习' },
+            { name: 'Quizlet', url: 'https://quizlet.com', icon: 'Q', desc: '单词卡片' },
+            { name: 'Memrise', url: 'https://www.memrise.com', icon: 'M', desc: '记忆训练' },
+            { name: 'AnkiWeb', url: 'https://ankiweb.net', icon: 'A', desc: '智能记忆' }
+          ]
+        },
+        dictionary: {
+          name: '词典工具',
+          sites: [
+            { name: 'Cambridge Dict', url: 'https://dictionary.cambridge.org', icon: 'C', desc: '剑桥词典' },
+            { name: 'Oxford Dict', url: 'https://www.oxfordlearnersdictionaries.com', icon: 'O', desc: '牛津词典' },
+            { name: 'Merriam-Webster', url: 'https://www.merriam-webster.com', icon: 'M', desc: '韦氏词典' },
+            { name: '有道词典', url: 'https://www.youdao.com', icon: 'Y', desc: '中英词典' }
+          ]
+        },
+        translation: {
+          name: '翻译工具',
+          sites: [
+            { name: 'Google翻译', url: 'https://translate.google.com', icon: 'G', desc: '谷歌翻译' },
+            { name: '百度翻译', url: 'https://fanyi.baidu.com', icon: 'B', desc: '百度翻译' },
+            { name: 'DeepL翻译', url: 'https://www.deepl.com/translator', icon: 'D', desc: 'DeepL翻译' },
+            { name: '腾讯翻译', url: 'https://transmart.qq.com', icon: 'T', desc: '腾讯翻译' }
+          ]
+        },
+        reading: {
+          name: '阅读资源',
+          sites: [
+            { name: 'The Economist', url: 'https://www.economist.com', icon: 'E', desc: '经济学人' },
+            { name: 'National Geographic', url: 'https://www.nationalgeographic.com', icon: 'N', desc: '国家地理' },
+            { name: 'Scientific American', url: 'https://www.scientificamerican.com', icon: 'S', desc: '科学美国人' },
+            { name: 'BBC News', url: 'https://www.bbc.com/news', icon: 'B', desc: 'BBC新闻' }
+          ]
+        }
+      };
+
+      // DOM元素
+      const elements = {
+        // 浏览器控制
+        urlInput: document.getElementById('urlInput'),
+        goBtn: document.getElementById('goBtn'),
+        mainMenuBtn: document.getElementById('mainMenuBtn'),
+        backBtn: document.getElementById('backBtn'),
+        forwardBtn: document.getElementById('forwardBtn'),
+        reloadBtn: document.getElementById('reloadBtn'),
+        homeBtn: document.getElementById('homeBtn'),
+        bookmarkBtn: document.getElementById('bookmarkBtn'),
+        fullscreenBtn: document.getElementById('fullscreenBtn'),
+        
+        // 搜索相关
+        cnSearchInput: document.getElementById('cnSearchInput'),
+        cnSearchBtn: document.getElementById('cnSearchBtn'),
+        searchEngineSelector: document.getElementById('searchEngineSelector'),
+        searchEngineDropdown: document.getElementById('searchEngineDropdown'),
+        currentSearchEngineIcon: document.getElementById('currentSearchEngineIcon'),
+        
+        // 浏览器标签页
+        browserTabs: document.getElementById('browserTabs'),
+        
+        // 网站框架
+        websiteFrame: document.getElementById('websiteFrame'),
+        
+        // 助手面板
+        quickNav: document.getElementById('quickNav'),
+        assistantTabs: document.querySelectorAll('.assistant-tab'),
+        functionPanel: document.getElementById('functionPanel'),
+        
+        // 通知
+        notification: document.getElementById('notification'),
+        notificationMessage: document.getElementById('notificationMessage'),
+        
+        // 模板
+        siteCardTemplate: document.getElementById('siteCardTemplate')
+      };
+
+      // 初始化
+      function init() {
+        loadState();
+        setupEventListeners();
+        setupClipboardListener();
+        renderSearchEngineOptions();
+        renderTabs();
+        renderQuickNav();
+        switchAssistantTab('translate');
+        
+        // 自动保存状态
+        setInterval(saveState, 30000);
+        
+        // 初始教程显示
+        setTimeout(() => {
+          showNotification('欢迎使用全能学习浏览器！点击"教程"标签查看详细使用指南。', 'info');
+        }, 1000);
+      }
+
+      // 设置剪切板监听器
+      function setupClipboardListener() {
+        // 监听粘贴事件
+        document.addEventListener('paste', function(e) {
+          if (!state.isClipboardListenerActive) return;
+          
+          const clipboardData = e.clipboardData || window.clipboardData;
+          const pastedText = clipboardData.getData('text');
+          
+          if (pastedText && pastedText.trim().length > 0) {
+            state.clipboardText = pastedText.trim();
+            
+            // 添加到历史记录
+            state.clipboardHistory.unshift({
+              text: state.clipboardText,
+              timestamp: new Date().toLocaleString(),
+              source: 'paste'
+            });
+            
+            // 限制历史记录长度
+            if (state.clipboardHistory.length > 20) {
+              state.clipboardHistory.pop();
+            }
+            
+            // 更新预览
+            updateClipboardPreview();
+            
+            // 显示通知
+            showNotification('剪切板内容已捕获', 'info');
+            
+            // 保存到本地存储
+            saveState();
+          }
+        });
+        
+        // 监听复制事件
+        document.addEventListener('copy', function() {
+          if (!state.isClipboardListenerActive) return;
+          
+          // 延迟获取剪切板内容
+          setTimeout(() => {
+            navigator.clipboard.readText().then(text => {
+              if (text && text.trim().length > 0) {
+                state.clipboardText = text.trim();
+                
+                // 添加到历史记录
+                state.clipboardHistory.unshift({
+                  text: state.clipboardText,
+                  timestamp: new Date().toLocaleString(),
+                  source: 'copy'
+                });
+                
+                // 限制历史记录长度
+                if (state.clipboardHistory.length > 20) {
+                  state.clipboardHistory.pop();
+                }
+                
+                // 更新预览
+                updateClipboardPreview();
+                
+                // 显示通知
+                showNotification('复制内容已捕获', 'info');
+                
+                // 保存到本地存储
+                saveState();
+              }
+            }).catch(err => {
+              console.log('无法读取剪切板:', err);
+            });
+          }, 100);
+        });
+      }
+
+      // 更新剪切板预览
+      function updateClipboardPreview() {
+        const previewElement = document.getElementById('clipboardPreview');
+        const sendButton = document.getElementById('sendClipboardToAI');
+        
+        if (previewElement && state.clipboardText) {
+          const displayText = state.clipboardText.length > 200 
+            ? state.clipboardText.substring(0, 200) + '...' 
+            : state.clipboardText;
+          previewElement.textContent = displayText;
+          
+          if (sendButton) {
+            sendButton.disabled = false;
+          }
+        } else if (previewElement) {
+          previewElement.textContent = '剪切板内容将在这里显示...';
+          
+          if (sendButton) {
+            sendButton.disabled = true;
+          }
+        }
+      }
+
+      // 渲染搜索引擎选项
+      function renderSearchEngineOptions() {
+        if (!elements.searchEngineDropdown) return;
+        
+        elements.searchEngineDropdown.innerHTML = '';
+        
+        Object.entries(searchEngines).forEach(([id, engine]) => {
+          const option = document.createElement('div');
+          option.className = `search-engine-option ${state.currentSearchEngine === id ? 'active' : ''}`;
+          option.dataset.engineId = id;
+          
+          option.innerHTML = `
+            <div class="search-engine-icon" style="background: ${engine.color}">${engine.icon}</div>
+            <span>${engine.name}</span>
+          `;
+          
+          option.addEventListener('click', () => {
+            switchSearchEngine(id);
+            elements.searchEngineDropdown.classList.remove('show');
+          });
+          
+          elements.searchEngineDropdown.appendChild(option);
+        });
+        
+        // 更新当前搜索引擎图标
+        const currentEngine = searchEngines[state.currentSearchEngine];
+        if (currentEngine && elements.currentSearchEngineIcon) {
+          elements.currentSearchEngineIcon.textContent = currentEngine.icon;
+          elements.currentSearchEngineIcon.style.color = currentEngine.color;
+        }
+      }
+
+      // 切换搜索引擎
+      function switchSearchEngine(engineId) {
+        if (!searchEngines[engineId]) return;
+        
+        state.currentSearchEngine = engineId;
+        const engine = searchEngines[engineId];
+        
+        // 更新图标
+        if (elements.currentSearchEngineIcon) {
+          elements.currentSearchEngineIcon.textContent = engine.icon;
+          elements.currentSearchEngineIcon.style.color = engine.color;
+        }
+        
+        // 更新输入框占位符
+        if (elements.cnSearchInput) {
+          elements.cnSearchInput.placeholder = `中文搜索（${engine.name}）`;
+        }
+        
+        showNotification(`已切换到${engine.name}搜索`, 'info');
+        saveState();
+      }
+
+      // 执行中文搜索
+      function performCnSearch() {
+        const query = elements.cnSearchInput.value.trim();
+        
+        if (!query) {
+          showNotification('请输入搜索关键词', 'warning');
+          return;
+        }
+        
+        const engine = searchEngines[state.currentSearchEngine];
+        if (!engine) return;
+        
+        const searchUrl = engine.url + encodeURIComponent(query);
+        
+        // 在新标签页中打开搜索结果
+        createNewTab();
+        const newTabIndex = state.tabs.length - 1;
+        state.tabs[newTabIndex].url = searchUrl;
+        state.tabs[newTabIndex].title = `${engine.name}搜索: ${query}`;
+        
+        elements.websiteFrame.src = searchUrl;
+        elements.urlInput.value = getDomainFromUrl(searchUrl);
+        
+        renderTabs();
+        showNotification(`正在使用${engine.name}搜索: ${query}`, 'info');
+      }
+
+      // 加载保存的状态
+      function loadState() {
+        try {
+          const savedState = localStorage.getItem('learning_browser_state');
+          if (savedState) {
+            const parsed = JSON.parse(savedState);
+            if (parsed.tabs) state.tabs = parsed.tabs;
+            if (parsed.bookmarks) state.bookmarks = parsed.bookmarks;
+            if (parsed.notes) state.notes = parsed.notes;
+            if (parsed.currentTab !== undefined) state.currentTab = parsed.currentTab;
+            if (parsed.currentSearchEngine) state.currentSearchEngine = parsed.currentSearchEngine;
+            if (parsed.currentAIWebsite) state.currentAIWebsite = parsed.currentAIWebsite;
+            if (parsed.clipboardHistory) state.clipboardHistory = parsed.clipboardHistory;
+          }
+          
+          // 加载笔记
+          const savedNotes = localStorage.getItem('learning_browser_notes');
+          if (savedNotes) {
+            state.notes = JSON.parse(savedNotes);
+          }
+        } catch (e) {
+          console.log('加载状态失败:', e);
+        }
+      }
+
+      // 保存状态
+      function saveState() {
+        try {
+          localStorage.setItem('learning_browser_state', JSON.stringify({
+            tabs: state.tabs,
+            bookmarks: state.bookmarks,
+            currentTab: state.currentTab,
+            currentSearchEngine: state.currentSearchEngine,
+            currentAIWebsite: state.currentAIWebsite,
+            clipboardHistory: state.clipboardHistory
+          }));
+          
+          localStorage.setItem('learning_browser_notes', JSON.stringify(state.notes));
+        } catch (e) {
+          console.log('保存状态失败:', e);
+        }
+      }
+
+      // 设置事件监听器
+      function setupEventListeners() {
+        // 返回主菜单
+        elements.mainMenuBtn.addEventListener('click', () => {
+          // 检查当前是否在iframe中，如果是则返回上级
+          if (window.self !== window.top) {
+            window.parent.location.href = 'index.html';
+          } else {
+            window.location.href = 'index.html';
+          }
+        });
+        
+        // 地址栏导航
+        elements.urlInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') navigateToUrl();
+        });
+        
+        elements.goBtn.addEventListener('click', navigateToUrl);
+        
+        // 中文搜索
+        elements.cnSearchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') performCnSearch();
+        });
+        
+        elements.cnSearchBtn.addEventListener('click', performCnSearch);
+        
+        // 搜索引擎选择器
+        elements.searchEngineSelector.addEventListener('click', (e) => {
+          e.stopPropagation();
+          elements.searchEngineDropdown.classList.toggle('show');
+        });
+        
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', () => {
+          elements.searchEngineDropdown.classList.remove('show');
+        });
+        
+        // 浏览器控制
+        elements.backBtn.addEventListener('click', () => {
+          try {
+            elements.websiteFrame.contentWindow.history.back();
+          } catch (e) {
+            showNotification('无法后退', 'warning');
+          }
+        });
+        
+        elements.forwardBtn.addEventListener('click', () => {
+          try {
+            elements.websiteFrame.contentWindow.history.forward();
+          } catch (e) {
+            showNotification('无法前进', 'warning');
+          }
+        });
+        
+        elements.reloadBtn.addEventListener('click', () => {
+          elements.websiteFrame.contentWindow.location.reload();
+        });
+        
+        elements.homeBtn.addEventListener('click', () => {
+          navigateTo('https://ieltscat.xdf.cn/practice/read');
+        });
+        
+        elements.bookmarkBtn.addEventListener('click', addBookmark);
+        elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
+        
+        // 助手标签页切换
+        elements.assistantTabs.forEach(tab => {
+          tab.addEventListener('click', () => {
+            const tabName = tab.dataset.tab;
+            switchAssistantTab(tabName);
+          });
+        });
+        
+        // 监听iframe加载完成
+        elements.websiteFrame.addEventListener('load', () => {
+          updateCurrentTabInfo();
+          detectWebsiteType();
+        });
+        
+        // 新标签页按钮
+        document.addEventListener('click', (e) => {
+          if (e.target.closest('.new-tab-btn')) {
+            createNewTab();
+          }
+          
+          if (e.target.closest('.tab-close')) {
+            const tabElement = e.target.closest('.browser-tab');
+            const tabId = parseInt(tabElement.dataset.tabId);
+            closeTab(tabId);
+          }
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+          // Ctrl+T 新建标签页
+          if (e.ctrlKey && e.key === 't') {
+            e.preventDefault();
+            createNewTab();
+          }
+          // Ctrl+W 关闭当前标签页
+          if (e.ctrlKey && e.key === 'w') {
+            e.preventDefault();
+            const currentTab = state.tabs[state.currentTab];
+            if (currentTab) {
+              closeTab(currentTab.id);
+            }
+          }
+          // Ctrl+S 保存笔记（当在笔记面板时）
+          if (e.ctrlKey && e.key === 's' && state.currentAssistantTab === 'notes') {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveNoteBtn');
+            if (saveBtn) saveBtn.click();
+          }
+          // Alt+S 聚焦中文搜索框
+          if (e.altKey && e.key === 's') {
+            e.preventDefault();
+            elements.cnSearchInput.focus();
+          }
+          // Alt+C 切换剪切板监听器
+          if (e.altKey && e.key === 'c') {
+            e.preventDefault();
+            toggleClipboardListener();
+          }
+        });
+      }
+
+      // 切换剪切板监听器
+      function toggleClipboardListener() {
+        state.isClipboardListenerActive = !state.isClipboardListenerActive;
+        
+        const toggleElement = document.getElementById('clipboardToggle');
+        if (toggleElement) {
+          toggleElement.classList.toggle('active', state.isClipboardListenerActive);
+        }
+        
+        showNotification(
+          state.isClipboardListenerActive ? '剪切板监听器已启用' : '剪切板监听器已禁用',
+          state.isClipboardListenerActive ? 'success' : 'info'
+        );
+      }
+
+      // 渲染浏览器标签页
+      function renderTabs() {
+        elements.browserTabs.innerHTML = '';
+        
+        state.tabs.forEach((tab, index) => {
+          const tabElement = document.createElement('div');
+          tabElement.className = 'browser-tab' + (tab.active ? ' active' : '');
+          tabElement.dataset.tabId = tab.id;
+          tabElement.innerHTML = `
+            <div class="tab-favicon" style="background: ${getColorFromString(tab.favicon)};">${tab.favicon.charAt(0)}</div>
+            <div class="tab-title">${tab.title}</div>
+            <div class="tab-close">×</div>
+          `;
+          
+          tabElement.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('tab-close')) {
+              switchTab(tab.id);
+            }
+          });
+          
+          elements.browserTabs.appendChild(tabElement);
+        });
+        
+        // 添加新建标签页按钮
+        const newTabBtn = document.createElement('div');
+        newTabBtn.className = 'new-tab-btn';
+        newTabBtn.innerHTML = '+';
+        newTabBtn.title = '新建标签页';
+        elements.browserTabs.appendChild(newTabBtn);
+      }
+
+      // 渲染快捷导航
+      function renderQuickNav() {
+        elements.quickNav.innerHTML = '';
+        
+        // 精选几个常用网站
+        const featuredSites = [
+          { name: '雅思阅读', url: 'https://ieltscat.xdf.cn/practice/read', icon: 'I', desc: '雅思练习' },
+          { name: 'BBC英语', url: 'https://www.bbc.co.uk/learningenglish', icon: 'B', desc: '英语学习' },
+          { name: 'DeepSeek', url: 'https://chat.deepseek.com', icon: 'D', desc: 'AI助手' },
+          { name: '百度搜索', url: 'https://www.baidu.com', icon: 'B', desc: '中文搜索' },
+          { name: 'TED演讲', url: 'https://www.ted.com/talks', icon: 'T', desc: '听力练习' },
+          { name: '词汇训练', url: 'https://www.vocabulary.com', icon: 'V', desc: '词汇记忆' }
+        ];
+        
+        featuredSites.forEach(site => {
+          const card = elements.siteCardTemplate.content.cloneNode(true);
+          const cardElement = card.querySelector('.nav-card');
+          
+          cardElement.dataset.url = site.url;
+          cardElement.querySelector('.nav-icon').textContent = site.icon;
+          cardElement.querySelector('.nav-title').textContent = site.name;
+          cardElement.querySelector('.nav-desc').textContent = site.desc;
+          
+          cardElement.addEventListener('click', () => {
+            navigateTo(site.url);
+          });
+          
+          elements.quickNav.appendChild(card);
+        });
+      }
+
+      // 切换浏览器标签页
+      function switchTab(tabId) {
+        const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+        if (tabIndex === -1) return;
+        
+        state.currentTab = tabIndex;
+        state.tabs.forEach((tab, index) => {
+          tab.active = index === tabIndex;
+        });
+        
+        const tab = state.tabs[tabIndex];
+        elements.websiteFrame.src = tab.url;
+        elements.urlInput.value = getDomainFromUrl(tab.url);
+        
+        renderTabs();
+        updateCurrentTabInfo();
+      }
+
+      // 创建新标签页
+      function createNewTab() {
+        const newTabId = Date.now();
+        const newTab = {
+          id: newTabId,
+          title: '新建标签页',
+          url: 'about:blank',
+          favicon: 'N',
+          active: false
+        };
+        
+        state.tabs.push(newTab);
+        state.currentTab = state.tabs.length - 1;
+        state.tabs.forEach((tab, index) => {
+          tab.active = index === state.currentTab;
+        });
+        
+        renderTabs();
+        elements.websiteFrame.src = 'about:blank';
+        elements.urlInput.value = '';
+      }
+
+      // 关闭标签页
+      function closeTab(tabId) {
+        if (state.tabs.length <= 1) {
+          showNotification('不能关闭最后一个标签页', 'warning');
+          return;
+        }
+        
+        const tabIndex = state.tabs.findIndex(tab => tab.id === tabId);
+        if (tabIndex === -1) return;
+        
+        const wasActive = state.tabs[tabIndex].active;
+        state.tabs.splice(tabIndex, 1);
+        
+        if (wasActive) {
+          state.currentTab = Math.min(tabIndex, state.tabs.length - 1);
+          state.tabs[state.currentTab].active = true;
+          
+          const activeTab = state.tabs[state.currentTab];
+          elements.websiteFrame.src = activeTab.url;
+          elements.urlInput.value = getDomainFromUrl(activeTab.url);
+        }
+        
+        renderTabs();
+      }
+
+      // 导航到URL
+      function navigateToUrl() {
+        let url = elements.urlInput.value.trim();
+        
+        if (!url) return;
+        
+        // 添加协议前缀
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        
+        navigateTo(url);
+      }
+
+      // 执行导航
+      function navigateTo(url) {
+        try {
+          elements.websiteFrame.src = url;
+          
+          // 更新当前标签页信息
+          const currentTab = state.tabs[state.currentTab];
+          currentTab.url = url;
+          currentTab.title = '加载中...';
+          
+          // 添加到历史记录
+          addToHistory(url);
+          
+          // 更新地址栏显示
+          elements.urlInput.value = getDomainFromUrl(url);
+          
+          updateCurrentTabInfo();
+        } catch (e) {
+          showNotification('无法加载该网址', 'error');
+        }
+      }
+
+      // 更新当前标签页信息
+      function updateCurrentTabInfo() {
+        setTimeout(() => {
+          try {
+            const currentTab = state.tabs[state.currentTab];
+            const iframeDoc = elements.websiteFrame.contentDocument || elements.websiteFrame.contentWindow.document;
+            
+            if (iframeDoc && iframeDoc.title) {
+              currentTab.title = iframeDoc.title.substring(0, 30) || '无标题';
+            }
+            
+            // 尝试获取favicon
+            const favicon = iframeDoc.querySelector('link[rel*="icon"]');
+            if (favicon) {
+              // 这里可以设置favicon，简化处理使用网站首字母
+              currentTab.favicon = currentTab.title.charAt(0).toUpperCase() || 'W';
+            }
+            
+            renderTabs();
+          } catch (e) {
+            // 跨域限制，无法访问iframe内容
+          }
+        }, 500);
+      }
+
+      // 检测网站类型
+      function detectWebsiteType() {
+        const currentUrl = state.tabs[state.currentTab]?.url || '';
+        
+        if (currentUrl.includes('ielts')) {
+          state.currentWebsiteType = 'ielts';
+        } else if (currentUrl.includes('dictionary') || currentUrl.includes('vocabulary')) {
+          state.currentWebsiteType = 'vocabulary';
+        } else if (currentUrl.includes('translate')) {
+          state.currentWebsiteType = 'translation';
+        } else if (currentUrl.includes('news') || currentUrl.includes('article')) {
+          state.currentWebsiteType = 'reading';
+        } else {
+          state.currentWebsiteType = 'english';
+        }
+      }
+
+      // 切换助手标签页
+      function switchAssistantTab(tabName) {
+        state.currentAssistantTab = tabName;
+        
+        // 更新按钮状态
+        elements.assistantTabs.forEach(tab => {
+          if (tab.dataset.tab === tabName) {
+            tab.classList.add('active');
+          } else {
+            tab.classList.remove('active');
+          }
+        });
+        
+        // 渲染对应的面板
+        renderAssistantPanel(tabName);
+      }
+
+      // 渲染助手面板
+      function renderAssistantPanel(tabName) {
+        elements.functionPanel.innerHTML = '';
+        
+        switch (tabName) {
+          case 'translate':
+            renderTranslationPanel();
+            break;
+          case 'notes':
+            renderNotesPanel();
+            break;
+          case 'ai':
+            renderAIBrowserPanel();
+            break;
+          case 'websites':
+            renderWebsitesPanel();
+            break;
+          case 'tutorial':
+            renderTutorialPanel();
+            break;
+        }
+      }
+
+      // 渲染翻译面板
+      function renderTranslationPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'panel-section';
+        panel.innerHTML = `
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.545 6.714 4.11 8H3l1.862-5h1.284L8 8H6.833l-.435-1.286H4.545zm1.634-.736L5.5 3.956h-.049l-.679 2.022H6.18z"/>
+              <path d="M0 2a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H3.5a2 2 0 0 1-1.967-1.75L.115 6.495A1.48 1.48 0 0 1 0 5.633V2zm2-1a1 1 0 0 0-1 1v3.651a.495.495 0 0 0 .41.488c.246.043.49.19.692.382l1.108.96L4.09 8H2V1z"/>
+            </svg>
+            智能翻译工具
+          </h3>
+          
+          <div class="translation-tool">
+            <div class="language-selector">
+              <select id="transSourceLang" style="width: 100%;">
+                <option value="auto">自动检测</option>
+                <option value="en">英语</option>
+                <option value="zh">中文</option>
+                <option value="ja">日语</option>
+                <option value="fr">法语</option>
+              </select>
+              
+              <button class="swap-btn" id="transSwapBtn">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 110-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z"/>
+                </svg>
+              </button>
+              
+              <select id="transTargetLang" style="width: 100%;">
+                <option value="zh">中文</option>
+                <option value="en">英语</option>
+                <option value="ja">日语</option>
+                <option value="fr">法语</option>
+              </select>
+            </div>
+            
+            <textarea 
+              id="transInput" 
+              placeholder="输入要翻译的文本，或从左侧网站复制内容..."
+              rows="4"
+            ></textarea>
+            
+            <div class="translate-controls">
+              <button class="btn btn-primary" id="doTranslateBtn">
+                翻译
+              </button>
+              <button class="btn btn-secondary" id="extractTextBtn">
+                提取网页文本
+              </button>
+            </div>
+            
+            <div class="translation-result" id="transResult">
+              翻译结果将在这里显示...
+            </div>
+            
+            <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+              Tips: 可以选中左侧网页文本后右键复制，然后在这里粘贴翻译
+            </div>
+          </div>
+        `;
+        
+        elements.functionPanel.appendChild(panel);
+        
+        // 绑定翻译面板事件
+        setTimeout(() => {
+          const swapBtn = document.getElementById('transSwapBtn');
+          const translateBtn = document.getElementById('doTranslateBtn');
+          const extractBtn = document.getElementById('extractTextBtn');
+          
+          swapBtn?.addEventListener('click', swapTranslationLanguages);
+          translateBtn?.addEventListener('click', performTranslation);
+          extractBtn?.addEventListener('click', extractWebsiteText);
+        }, 100);
+      }
+
+      // 渲染笔记面板
+      function renderNotesPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'panel-section';
+        panel.innerHTML = `
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zM5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1zm0 3h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1 0-1z"/>
+            </svg>
+            学习笔记
+          </h3>
+          
+          <div class="notes-tool">
+            <!-- 用于标记当前正在编辑的笔记 id -->
+            <input type="hidden" id="editingNoteId" value="" />
+
+            <textarea 
+              id="noteInputArea" 
+              placeholder="记录学习笔记、难点、知识点...（可直接修改已保存笔记后点击保存）"
+              rows="6"
+            ></textarea>
+            
+            <div class="note-actions">
+              <button class="btn btn-primary" id="saveNoteBtn">保存笔记</button>
+              <button class="btn btn-secondary" id="clearNoteBtn">清空</button>
+              <button class="btn btn-secondary" id="formatNoteBtn">格式化</button>
+              <button class="btn btn-secondary" id="exportAllNotesBtn" title="导出所有笔记为 JSON">导出全部</button>
+            </div>
+            
+            <div class="notes-list" id="notesListContainer">
+              <!-- 笔记列表会动态加载 -->
+            </div>
+          </div>
+        `;
+        
+        elements.functionPanel.appendChild(panel);
+        
+        // 绑定笔记面板事件
+        setTimeout(() => {
+          const saveBtn = document.getElementById('saveNoteBtn');
+          const clearBtn = document.getElementById('clearNoteBtn');
+          const formatBtn = document.getElementById('formatNoteBtn');
+          const exportAllBtn = document.getElementById('exportAllNotesBtn');
+          
+          saveBtn?.addEventListener('click', saveNewNote);
+          clearBtn?.addEventListener('click', () => {
+            document.getElementById('noteInputArea').value = '';
+            document.getElementById('editingNoteId').value = '';
+            saveBtn.textContent = '保存笔记';
+          });
+          formatBtn?.addEventListener('click', formatNote);
+          exportAllBtn?.addEventListener('click', exportAllNotes);
+
+          loadAndRenderNotes();
+        }, 100);
+      }
+
+      // 渲染AI浏览器面板
+      function renderAIBrowserPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'panel-section';
+        panel.innerHTML = `
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M9.5 2.672a.5.5 0 1 0 1 0V.843a.5.5 0 0 0-1 0v1.829Zm4.5.035A.5.5 0 0 0 13.293 2L12 3.293a.5.5 0 1 0 .707.707l1.293-1.293a.5.5 0 0 0 0-.707ZM2.707 2.707A.5.5 0 0 0 2 2.293L.707 3.586a.5.5 0 0 0 0 .708l1.293 1.293A.5.5 0 0 0 3.707 4.42L2.414 3.124a.5.5 0 0 0-.707-.707Zm12 10.586A.5.5 0 0 0 14 13.707l1.293-1.293a.5.5 0 0 0 0-.707l-1.293-1.293a.5.5 0 0 0-.707.707l1.293 1.293a.5.5 0 0 0 .707 0ZM2.293 13.707a.5.5 0 0 0 .707.707l1.293-1.293a.5.5 0 0 0 0-.707l-1.293-1.293a.5.5 0 0 0-.707.707l1.293 1.293a.5.5 0 0 0 0 .707ZM8 3.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9ZM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0Z"/>
+            </svg>
+            AI助手浏览器
+          </h3>
+          
+          <div class="ai-browser-container">
+            <div class="clipboard-listener">
+              <div class="clipboard-header">
+                <div style="font-weight: 600; font-size: 14px;">剪切板监听器</div>
+                <div class="clipboard-toggle">
+                  <span>监听状态:</span>
+                  <div class="toggle-switch ${state.isClipboardListenerActive ? 'active' : ''}" id="clipboardToggle">
+                    <div class="toggle-slider"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="clipboard-preview" id="clipboardPreview">
+                ${state.clipboardText || '剪切板内容将在这里显示...'}
+              </div>
+              
+              <div class="clipboard-actions">
+                <button class="btn btn-secondary" id="clearClipboardBtn">
+                  清空
+                </button>
+                <button class="btn btn-primary" id="sendClipboardToAI" ${state.clipboardText ? '' : 'disabled'}>
+                  发送到AI
+                </button>
+              </div>
+            </div>
+            
+            <div class="ai-url-bar">
+              <input 
+                type="text" 
+                class="ai-url-input" 
+                id="aiUrlInput"
+                placeholder="输入AI网站地址"
+                value="${aiWebsites[state.currentAIWebsite]?.url || 'https://chat.deepseek.com'}"
+              >
+              <button class="btn btn-primary" id="goAIBtn">
+                前往
+              </button>
+            </div>
+            
+            <div class="ai-preset-buttons" id="aiPresetButtons">
+              <!-- AI网站预设按钮会动态生成 -->
+            </div>
+            
+            <iframe 
+              src="${aiWebsites[state.currentAIWebsite]?.url || 'https://chat.deepseek.com'}" 
+              class="ai-frame"
+              id="aiFrame"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+              allow="clipboard-write"
+              title="AI助手浏览器"
+            ></iframe>
+            
+            <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+              <strong>使用说明:</strong><br>
+              1. 启用剪切板监听器后，复制的内容会自动捕获<br>
+              2. 点击"发送到AI"将剪切板内容发送到当前AI网站<br>
+              3. 可以随时切换不同的AI网站<br>
+              4. 也可以手动输入任意AI网站地址
+            </div>
+          </div>
+        `;
+        
+        elements.functionPanel.appendChild(panel);
+        
+        // 绑定AI浏览器面板事件
+        setTimeout(() => {
+          const toggleBtn = document.getElementById('clipboardToggle');
+          const clearClipboardBtn = document.getElementById('clearClipboardBtn');
+          const sendClipboardBtn = document.getElementById('sendClipboardToAI');
+          const aiUrlInput = document.getElementById('aiUrlInput');
+          const goAIBtn = document.getElementById('goAIBtn');
+          
+          toggleBtn?.addEventListener('click', toggleClipboardListener);
+          clearClipboardBtn?.addEventListener('click', clearClipboardText);
+          sendClipboardBtn?.addEventListener('click', sendClipboardToAI);
+          
+          aiUrlInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') navigateToAIUrl();
+          });
+          
+          goAIBtn?.addEventListener('click', navigateToAIUrl);
+          
+          // 渲染AI网站预设按钮
+          renderAIPresetButtons();
+          
+          // 更新剪切板预览
+          updateClipboardPreview();
+        }, 100);
+      }
+
+      // 渲染AI网站预设按钮
+      function renderAIPresetButtons() {
+        const container = document.getElementById('aiPresetButtons');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        Object.entries(aiWebsites).forEach(([id, site]) => {
+          const button = document.createElement('button');
+          button.className = `ai-preset-btn ${state.currentAIWebsite === id ? 'active' : ''}`;
+          button.dataset.aiId = id;
+          button.innerHTML = `
+            <span style="display: inline-block; width: 16px; height: 16px; background: ${site.color}; color: white; border-radius: 4px; text-align: center; line-height: 16px; font-size: 10px; margin-right: 4px;">${site.icon}</span>
+            ${site.name}
+          `;
+          
+          button.addEventListener('click', () => {
+            switchAIWebsite(id);
+          });
+          
+          container.appendChild(button);
+        });
+      }
+
+      // 切换AI网站
+      function switchAIWebsite(aiId) {
+        if (!aiWebsites[aiId]) return;
+        
+        state.currentAIWebsite = aiId;
+        const site = aiWebsites[aiId];
+        
+        // 更新URL输入框
+        const aiUrlInput = document.getElementById('aiUrlInput');
+        if (aiUrlInput) {
+          aiUrlInput.value = site.url;
+        }
+        
+        // 更新iframe
+        const aiFrame = document.getElementById('aiFrame');
+        if (aiFrame) {
+          aiFrame.src = site.url;
+        }
+        
+        // 更新按钮状态
+        document.querySelectorAll('.ai-preset-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.aiId === aiId);
+        });
+        
+        showNotification(`已切换到${site.name}`, 'info');
+        saveState();
+      }
+
+      // 导航到AI URL
+      function navigateToAIUrl() {
+        const aiUrlInput = document.getElementById('aiUrlInput');
+        if (!aiUrlInput) return;
+        
+        let url = aiUrlInput.value.trim();
+        
+        if (!url) {
+          showNotification('请输入AI网站地址', 'warning');
+          return;
+        }
+        
+        // 添加协议前缀
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          url = 'https://' + url;
+        }
+        
+        // 更新iframe
+        const aiFrame = document.getElementById('aiFrame');
+        if (aiFrame) {
+          aiFrame.src = url;
+        }
+        
+        // 检查是否为预设网站
+        let isPreset = false;
+        Object.entries(aiWebsites).forEach(([id, site]) => {
+          if (site.url === url) {
+            state.currentAIWebsite = id;
+            isPreset = true;
+          }
+        });
+        
+        if (!isPreset) {
+          state.currentAIWebsite = 'custom';
+        }
+        
+        showNotification('正在加载AI网站...', 'info');
+        saveState();
+      }
+
+      // 清空剪切板文本
+      function clearClipboardText() {
+        state.clipboardText = '';
+        updateClipboardPreview();
+        showNotification('剪切板内容已清空', 'info');
+      }
+
+      // 发送剪切板内容到AI
+      function sendClipboardToAI() {
+        if (!state.clipboardText || state.clipboardText.trim().length === 0) {
+          showNotification('剪切板为空', 'warning');
+          return;
+        }
+        
+        const aiFrame = document.getElementById('aiFrame');
+        if (!aiFrame) {
+          showNotification('AI浏览器未加载', 'error');
+          return;
+        }
+        
+        try {
+          // 由于跨域限制，我们不能直接操作AI网站的iframe
+          // 这里我们尝试将内容复制到剪贴板，并提示用户手动粘贴
+          const question = `请帮我分析以下文本：\n\n"${state.clipboardText}"\n\n请：\n1. 翻译成中文（如果是英文）\n2. 分析语法结构\n3. 提供学习建议`;
+          
+          navigator.clipboard.writeText(question).then(() => {
+            showNotification('问题已复制到剪贴板，请在AI输入框中粘贴(Ctrl+V)', 'success');
+            
+            // 聚焦到AI iframe
+            aiFrame.focus();
+            
+            // 显示操作提示
+            setTimeout(() => {
+              showNotification('请点击AI输入框，然后按Ctrl+V粘贴问题', 'info');
+            }, 500);
+          }).catch(err => {
+            console.error('复制失败:', err);
+            showNotification('复制失败，请手动复制以下文本到AI:', 'error');
+            
+            // 如果复制失败，显示文本供用户手动复制
+            alert(`请复制以下文本到AI：\n\n${question}`);
+          });
+          
+        } catch (error) {
+          console.error('发送到AI失败:', error);
+          showNotification('发送失败，请手动复制文本到AI', 'error');
+        }
+      }
+
+      // 渲染网站面板
+      function renderWebsitesPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'panel-section';
+        panel.innerHTML = `
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.5 5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zM3 4.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H8.5v3a1.5 1.5 0 0 1 1.5 1.5h5.5a.5.5 0 0 1 0 1H10A1.5 1.5 0 0 1 8.5 14h-1A1.5 1.5 0 0 1 6 12.5H.5a.5.5 0 0 1 0-1H6A1.5 1.5 0 0 1 7.5 10v-3H2a2 2 0 0 1-2-2V4zm1 0v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1zm6 7.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5z"/>
+              </svg>
+              学习网站导航
+          </h3>
+          
+          <div class="website-manager" id="websiteManager">
+            <!-- 网站分类会动态生成 -->
+          </div>
+        `;
+        
+        elements.functionPanel.appendChild(panel);
+        
+        // 渲染网站分类
+        setTimeout(() => {
+          renderWebsiteCategories();
+        }, 100);
+      }
+
+      // 渲染教程面板
+      function renderTutorialPanel() {
+        const panel = document.createElement('div');
+        panel.className = 'panel-section';
+        panel.innerHTML = `
+          <h3>
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M9.5 0a.5.5 0 0 1 .5.5V2h1.5A1.5 1.5 0 0 1 13 3.5V4h1.5A1.5 1.5 0 0 1 16 5.5v8a1.5 1.5 0 0 1-1.5 1.5H9a6 6 0 0 0 1.5-1v1a7 7 0 0 1-1.5.5H1.5A1.5 1.5 0 0 1 0 13.5v-8A1.5 1.5 0 0 1 1.5 4H3v-.5A1.5 1.5 0 0 1 4.5 2H6V.5a.5.5 0 0 1 1 0V2h2V.5a.5.5 0 0 1 .5-.5zM4.5 3a.5.5 0 0 0-.5.5V4h4v-.5a.5.5 0 0 0-.5-.5h-3zM1.5 4a.5.5 0 0 0-.5.5v8a.5.5 0 0 0 .5.5H9a.5.5 0 0 0 .5-.5v-8A.5.5 0 0 0 9 4H1.5z"/>
+            </svg>
+            详细使用教程
+          </h3>
+          
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">1</span>
+                <span class="step-title">中文搜索功能</span>
+              </div>
+              <div class="step-desc">
+                1. 在顶部中文搜索框中输入关键词<br>
+                2. 点击搜索图标或按回车键进行搜索<br>
+                3. 点击搜索引擎图标可以切换搜索引擎（百度、谷歌、必应、搜狗）<br>
+                4. 搜索结果会在新标签页中打开
+              </div>
+              <div class="step-code">
+                // 快捷键: Alt+S 快速聚焦到中文搜索框
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">2</span>
+                <span class="step-title">AI助手浏览器</span>
+              </div>
+              <div class="step-desc">
+                1. 启用剪切板监听器，自动捕获复制的内容<br>
+                2. 点击"发送到AI"将剪切板内容发送到当前AI网站<br>
+                3. 点击预设按钮快速切换不同的AI网站<br>
+                4. 也可以手动输入任意AI网站地址
+              </div>
+              <div class="step-code">
+                // 快捷键: Alt+C 切换剪切板监听器状态
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">3</span>
+                <span class="step-title">浏览器基本操作</span>
+              </div>
+              <div class="step-desc">
+                在顶部地址栏输入网址，或从右侧"网站"面板选择学习网站。使用前进、后退、刷新按钮控制页面导航。
+              </div>
+              <div class="step-code">
+                // 快速访问：直接在地址栏输入网址后按回车
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">4</span>
+                <span class="step-title">多标签页管理</span>
+              </div>
+              <div class="step-desc">
+                点击标签页右上角的"+"新建标签页，点击标签页上的"×"关闭标签页。支持同时打开多个学习网站。
+              </div>
+              <div class="step-code">
+                // 快捷键：Ctrl+T 新建标签页，Ctrl+W 关闭当前标签页
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">5</span>
+                <span class="step-title">智能翻译工具</span>
+              </div>
+              <div class="step-desc">
+                1. 在翻译面板输入或粘贴文本<br>
+                2. 选择源语言和目标语言<br>
+                3. 点击"翻译"按钮获取结果<br>
+                4. 使用"提取网页文本"自动获取左侧页面内容
+              </div>
+              <div class="step-code">
+                // 小技巧：选中左侧网页文本后复制，会自动填充到翻译框
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">6</span>
+                <span class="step-title">学习笔记功能</span>
+              </div>
+              <div class="step-desc">
+                1. 在学习过程中随时记录笔记<br>
+                2. 支持格式化笔记（添加时间戳）<br>
+                3. 笔记自动保存到本地浏览器<br>
+                4. 点击历史笔记可重新编辑
+              </div>
+              <div class="step-code">
+                // 快捷键：Ctrl+S 快速保存当前笔记
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">7</span>
+                <span class="step-title">网站快捷导航</span>
+              </div>
+              <div class="step-desc">
+                右侧顶部提供常用学习网站的快捷入口。在"网站"面板中，按分类整理了各类学习资源，点击即可快速访问。
+              </div>
+              <div class="step-code">
+                // 预置了雅思、英语学习、词典、翻译、阅读等6大类24个网站
+              </div>
+            </div>
+            
+            <div class="tutorial-step">
+              <div>
+                <span class="step-number">8</span>
+                <span class="step-title">数据保存与导出</span>
+              </div>
+              <div class="step-desc">
+                所有学习笔记、书签、浏览历史都保存在本地浏览器中，不会上传到服务器。关闭浏览器后数据不会丢失。
+              </div>
+              <div class="step-code">
+                // 数据位置：浏览器本地存储 (LocalStorage)
+              </div>
+            </div>
+          </div>
+        `;
+        
+        elements.functionPanel.appendChild(panel);
+      }
+
+      // 渲染网站分类
+      function renderWebsiteCategories() {
+        const container = document.getElementById('websiteManager');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        Object.entries(learningWebsites).forEach(([categoryId, category]) => {
+          const categoryElement = document.createElement('div');
+          categoryElement.className = 'site-category';
+          
+          let sitesHTML = '';
+          category.sites.forEach(site => {
+            sitesHTML += `
+              <div class="site-card" data-url="${site.url}">
+                <div class="site-icon">${site.icon}</div>
+                <div class="site-name">${site.name}</div>
+                <div class="site-desc">${site.desc}</div>
+              </div>
+            `;
+          });
+          
+          categoryElement.innerHTML = `
+            <div class="category-title">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31L.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3zm-8.322.12C1.72 3.042 1.95 3 2.19 3h5.396l-.707-.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139z"/>
+              </svg>
+              ${category.name}
+            </div>
+            <div class="site-grid">
+              ${sitesHTML}
+            </div>
+          `;
+          
+          container.appendChild(categoryElement);
+        });
+        
+        // 绑定网站卡片点击事件
+        container.querySelectorAll('.site-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const url = card.dataset.url;
+            navigateTo(url);
+          });
+        });
+      }
+
+      // 翻译相关功能
+      async function performTranslation() {
+        const input = document.getElementById('transInput');
+        const result = document.getElementById('transResult');
+        
+        if (!input || !result) return;
+        
+        const text = input.value.trim();
+        if (!text) {
+          showNotification('请输入要翻译的文本', 'warning');
+          return;
+        }
+        
+        showNotification('正在翻译...', 'info');
+        result.innerHTML = '<div style="display: flex; align-items: center; gap: 8px;"><div class="spinner"></div>翻译中...</div>';
+        
+        try {
+          // 获取选择的语言
+          const sourceLang = document.getElementById('transSourceLang')?.value || 'auto';
+          const targetLang = document.getElementById('transTargetLang')?.value || 'zh';
+          
+          const translatedText = await translateWithFallback(text, sourceLang, targetLang);
+          result.textContent = translatedText;
+          showNotification('翻译完成', 'success');
+        } catch (error) {
+          console.error('翻译失败:', error);
+          result.textContent = '翻译失败，请稍后重试。';
+          showNotification('翻译失败', 'error');
+        }
+      }
+
+      // 交换翻译语言
+      function swapTranslationLanguages() {
+        const sourceSelect = document.getElementById('transSourceLang');
+        const targetSelect = document.getElementById('transTargetLang');
+        
+        if (!sourceSelect || !targetSelect) return;
+        
+        const sourceLang = sourceSelect.value;
+        const targetLang = targetSelect.value;
+        
+        sourceSelect.value = targetLang;
+        targetSelect.value = sourceLang;
+        
+        // 交换输入和输出内容
+        const input = document.getElementById('transInput');
+        const result = document.getElementById('transResult');
+        
+        if (input && result && result.textContent && !result.textContent.includes('翻译结果将在这里显示')) {
+          const temp = input.value;
+          input.value = result.textContent;
+          result.textContent = temp;
+        }
+      }
+
+      // 提取网页文本
+      function extractWebsiteText() {
+        try {
+          // 尝试获取剪切板内容
+          if (state.clipboardText) {
+            const input = document.getElementById('transInput');
+            if (input) {
+              input.value = state.clipboardText;
+              showNotification('剪切板内容已提取', 'success');
+              return;
+            }
+          }
+          
+          // 备用方法：尝试从iframe获取
+          const iframeDoc = elements.websiteFrame.contentDocument || elements.websiteFrame.contentWindow.document;
+          const text = iframeDoc.body.innerText;
+          
+          if (text && text.length > 0) {
+            const input = document.getElementById('transInput');
+            if (input) {
+              input.value = text.substring(0, 2000);
+              showNotification('网页文本提取成功', 'success');
+            }
+          } else {
+            showNotification('未能提取到文本内容', 'warning');
+          }
+        } catch (e) {
+          showNotification('无法提取文本（跨域限制）', 'error');
+        }
+      }
+
+      // 翻译备用方案
+      async function translateWithFallback(text, sourceLang, targetLang) {
+        // 尝试使用多个翻译API
+        const apis = [
+          {
+            name: 'mymemory',
+            url: `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`,
+            parse: data => data.responseData?.translatedText
+          },
+          {
+            name: 'libretranslate',
+            url: 'https://libretranslate.com/translate',
+            method: 'POST',
+            body: JSON.stringify({
+              q: text,
+              source: sourceLang === 'auto' ? 'auto' : sourceLang,
+              target: targetLang,
+              format: 'text'
+            }),
+            parse: data => data.translatedText
+          }
+        ];
+        
+        for (const api of apis) {
+          try {
+            const options = {
+              method: api.method || 'GET',
+              headers: api.method === 'POST' ? {
+                'Content-Type': 'application/json'
+              } : {}
+            };
+            
+            if (api.body) {
+              options.body = api.body;
+            }
+            
+            const response = await fetch(api.url, options);
+            if (!response.ok) continue;
+            
+            const data = await response.json();
+            const translated = api.parse(data);
+            
+            if (translated && translated !== text && translated.trim().length > 0) {
+              return translated;
+            }
+          } catch (error) {
+            console.log(`API ${api.name} 失败:`, error);
+            continue;
+          }
+        }
+        
+        // 备用：简单本地词库
+        return translateWithLocalDict(text, sourceLang, targetLang);
+      }
+
+      // 本地词库翻译
+      function translateWithLocalDict(text, sourceLang, targetLang) {
+        const localDict = {
+          en: {
+            zh: {
+              'reading': '阅读', 'comprehension': '理解', 'passage': '段落', 
+              'question': '问题', 'answer': '答案', 'vocabulary': '词汇',
+              'practice': '练习', 'test': '测试', 'ielts': '雅思',
+              'academic': '学术的', 'learning': '学习', 'english': '英语',
+              'hello': '你好', 'world': '世界', 'thank you': '谢谢',
+              'good morning': '早上好', 'good night': '晚安'
+            }
+          },
+          zh: {
+            en: {
+              '阅读': 'reading', '理解': 'comprehension', '段落': 'passage',
+              '问题': 'question', '答案': 'answer', '词汇': 'vocabulary',
+              '练习': 'practice', '测试': 'test', '雅思': 'ielts',
+              '学术': 'academic', '学习': 'learning', '英语': 'english',
+              '你好': 'hello', '世界': 'world', '谢谢': 'thank you',
+              '早上好': 'good morning', '晚安': 'good night'
+            }
+          }
+        };
+        
+        const dict = localDict[sourceLang]?.[targetLang];
+        if (!dict) return '暂不支持此语言对的翻译';
+        
+        // 尝试匹配完整短语
+        let translated = text;
+        for (const [key, value] of Object.entries(dict).sort((a, b) => b[0].length - a[0].length)) {
+          const regex = new RegExp(`\\b${key}\\b`, 'gi');
+          translated = translated.replace(regex, value);
+        }
+        
+        return translated.charAt(0).toUpperCase() + translated.slice(1);
+      }
+
+      // 笔记相关功能
+      function saveNewNote() {
+        const input = document.getElementById('noteInputArea');
+        const editingIdInput = document.getElementById('editingNoteId');
+        if (!input || !editingIdInput) return;
+        
+        const noteText = input.value.trim();
+        if (!noteText) {
+          showNotification('请输入笔记内容', 'warning');
+          return;
+        }
+        
+        const editingId = editingIdInput.value;
+        if (editingId) {
+          // 编辑已有笔记
+          const idx = state.notes.findIndex(n => String(n.id) === String(editingId));
+          if (idx !== -1) {
+            state.notes[idx].content = noteText;
+            state.notes[idx].timestamp = new Date().toLocaleString();
+            // 更新关联网址与类型（保留原值若为空）
+            state.notes[idx].website = state.tabs[state.currentTab]?.url || state.notes[idx].website || '';
+            state.notes[idx].type = state.currentWebsiteType || state.notes[idx].type || '';
+            showNotification('笔记已更新', 'success');
+          } else {
+            showNotification('编辑失败：未找到该笔记', 'error');
+          }
+        } else {
+          // 新建笔记
+          const note = {
+            id: Date.now(),
+            content: noteText,
+            timestamp: new Date().toLocaleString(),
+            website: state.tabs[state.currentTab]?.url || '',
+            type: state.currentWebsiteType
+          };
+          
+          state.notes.unshift(note);
+          
+          // 只保留最近的100条笔记
+          if (state.notes.length > 100) {
+            state.notes.pop();
+          }
+          
+          showNotification('笔记已保存', 'success');
+        }
+        
+        // 保存到本地存储
+        saveState();
+        
+        // 重置编辑状态并重新渲染
+        editingIdInput.value = '';
+        input.value = '';
+        const saveBtn = document.getElementById('saveNoteBtn');
+        if (saveBtn) saveBtn.textContent = '保存笔记';
+        loadAndRenderNotes();
+      }
+
+      // 加载并渲染笔记（支持导出、删除、编辑）
+      function loadAndRenderNotes() {
+        const container = document.getElementById('notesListContainer');
+        if (!container) return;
+        
+        if (state.notes.length === 0) {
+          container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">暂无笔记，开始记录你的学习心得吧！</div>';
+          return;
+        }
+        
+        container.innerHTML = '';
+        
+        state.notes.forEach(note => {
+          const noteElement = document.createElement('div');
+          noteElement.className = 'note-item';
+          noteElement.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+              <div style="flex:1">
+                <div class="note-time">${note.timestamp}</div>
+                <div class="note-content">${escapeHtml(note.content.substring(0, 200))}${note.content.length>200?'...':''}</div>
+                <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">${note.website ? '来源：' + getDomainFromUrl(note.website) : ''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;min-width:80px">
+                <button class="btn btn-secondary btn-edit" data-id="${note.id}" title="编辑" style="padding:4px 8px;font-size:12px">编辑</button>
+                <button class="btn btn-secondary btn-export" data-id="${note.id}" title="导出" style="padding:4px 8px;font-size:12px">导出</button>
+                <button class="btn btn-secondary btn-delete" data-id="${note.id}" title="删除" style="padding:4px 8px;font-size:12px">删除</button>
+              </div>
+            </div>
+          `;
+          
+          container.appendChild(noteElement);
+        });
+        
+        // 绑定操作按钮事件
+        container.querySelectorAll('.btn-edit').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            const note = state.notes.find(n => String(n.id) === String(id));
+            if (!note) {
+              showNotification('未找到该笔记', 'error');
+              return;
+            }
+            // 填充到编辑区域
+            const input = document.getElementById('noteInputArea');
+            const editingIdInput = document.getElementById('editingNoteId');
+            if (input && editingIdInput) {
+              input.value = note.content;
+              editingIdInput.value = note.id;
+              const saveBtn = document.getElementById('saveNoteBtn');
+              if (saveBtn) saveBtn.textContent = '保存修改';
+              showNotification('已加载笔记到编辑区', 'info');
+              // 滚动到编辑区域
+              input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          });
+        });
+        
+        container.querySelectorAll('.btn-export').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            exportNote(id);
+          });
+        });
+        
+        container.querySelectorAll('.btn-delete').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.dataset.id;
+            if (confirm('确定删除该笔记？此操作无法撤销。')) {
+              deleteNote(id);
+            }
+          });
+        });
+      }
+
+      // 格式化笔记
+      function formatNote() {
+        const input = document.getElementById('noteInputArea');
+        if (!input) return;
+        
+        let text = input.value;
+        const timestamp = new Date().toLocaleString();
+        
+        text = `[${timestamp}]\n${text}\n\n---\n\n`;
+        
+        input.value = text;
+        showNotification('笔记已格式化', 'info');
+      }
+
+      // 导出单条笔记为 txt
+      function exportNote(id) {
+        const note = state.notes.find(n => String(n.id) === String(id));
+        if (!note) {
+          showNotification('未找到要导出的笔记', 'error');
+          return;
+        }
+        const content = `时间：${note.timestamp}\n来源：${note.website || '无'}\n类型：${note.type || '未分类'}\n\n${note.content}`;
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const safeTime = note.timestamp.replace(/[^\w\-]/g, '_');
+        a.download = `note_${safeTime}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showNotification('笔记已导出', 'success');
+      }
+
+      // 导出全部笔记为 JSON 文件
+      function exportAllNotes() {
+        const data = JSON.stringify(state.notes, null, 2);
+        const blob = new Blob([data], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `notes_all_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showNotification('全部笔记已导出 (JSON)', 'success');
+      }
+
+      // 删除笔记
+      function deleteNote(id) {
+        const idx = state.notes.findIndex(n => String(n.id) === String(id));
+        if (idx === -1) {
+          showNotification('未找到要删除的笔记', 'error');
+          return;
+        }
+        state.notes.splice(idx, 1);
+        saveState();
+        loadAndRenderNotes();
+        showNotification('笔记已删除', 'success');
+        // 如果正在编辑该笔记，清理编辑区
+        const editingIdInput = document.getElementById('editingNoteId');
+        if (editingIdInput && String(editingIdInput.value) === String(id)) {
+          editingIdInput.value = '';
+          const input = document.getElementById('noteInputArea');
+          if (input) input.value = '';
+          const saveBtn = document.getElementById('saveNoteBtn');
+          if (saveBtn) saveBtn.textContent = '保存笔记';
+        }
+      }
+
+      // 添加书签
+      function addBookmark() {
+        const currentTab = state.tabs[state.currentTab];
+        if (!currentTab || !currentTab.url || currentTab.url === 'about:blank') {
+          showNotification('当前页面无法添加书签', 'warning');
+          return;
+        }
+        
+        // 检查是否已经添加过
+        const existingIndex = state.bookmarks.findIndex(b => b.url === currentTab.url);
+        if (existingIndex !== -1) {
+          showNotification('该书签已存在', 'info');
+          return;
+        }
+        
+        const bookmark = {
+          id: Date.now(),
+          title: currentTab.title,
+          url: currentTab.url,
+          timestamp: new Date().toLocaleString(),
+          favicon: currentTab.favicon
+        };
+        
+        state.bookmarks.unshift(bookmark);
+        
+        // 只保留最近的50个书签
+        if (state.bookmarks.length > 50) {
+          state.bookmarks.pop();
+        }
+        
+        saveState();
+        showNotification('书签已添加', 'success');
+      }
+
+      // 添加到历史记录
+      function addToHistory(url) {
+        if (url === 'about:blank') return;
+        
+        const historyItem = {
+          url: url,
+          timestamp: new Date().toLocaleString(),
+          title: state.tabs[state.currentTab]?.title || '无标题'
+        };
+        
+        state.history.unshift(historyItem);
+        
+        // 只保留最近的50条历史记录
+        if (state.history.length > 50) {
+          state.history.pop();
+        }
+      }
+
+      // 切换全屏
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen().catch(err => {
+              console.log(`全屏请求失败: ${err.message}`);
+              showNotification('无法进入全屏模式', 'error');
+            });
+          }
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+        }
+      }
+
+      // 显示通知
+      function showNotification(message, type = 'info') {
+        if (!elements.notification || !elements.notificationMessage) return;
+        
+        elements.notificationMessage.textContent = message;
+        
+        // 设置通知颜色
+        elements.notification.style.borderLeftColor = 
+          type === 'success' ? 'var(--accent-success)' :
+          type === 'warning' ? 'var(--accent-warning)' :
+          type === 'error' ? 'var(--accent-danger)' :
+          'var(--accent-primary)';
+        
+        elements.notification.classList.add('show');
+        
+        // 3秒后隐藏
+        setTimeout(() => {
+          elements.notification.classList.remove('show');
+        }, 3000);
+      }
+
+      // 工具函数
+      function getDomainFromUrl(url) {
+        try {
+          if (url === 'about:blank') return '';
+          const urlObj = new URL(url);
+          return urlObj.hostname + (urlObj.pathname !== '/' ? urlObj.pathname.substring(0, 30) : '');
+        } catch (e) {
+          return url.substring(0, 50);
+        }
+      }
+
+      function getColorFromString(str) {
+        const colors = [
+          'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+          'linear-gradient(135deg, #10b981, #059669)',
+          'linear-gradient(135deg, #f59e0b, #d97706)',
+          'linear-gradient(135deg, #ef4444, #dc2626)',
+          'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+          'linear-gradient(135deg, #3b82f6, #2563eb)'
+        ];
+        
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        return colors[Math.abs(hash) % colors.length];
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // 初始化应用
+      window.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>

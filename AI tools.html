@@ -1,0 +1,3404 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI多智能体协作系统 - 增强分屏版</title>
+  <style>
+    :root {
+      --bg: #071126;
+      --card: #0b1622;
+      --accent1: #7c3aed;
+      --accent2: #06b6d4;
+      --accent3: #10b981;
+      --accent4: #f59e0b;
+      --accent5: #ec4899;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --muted: #9fb0c8;
+      --text: #e6eef6;
+      --border: rgba(255, 255, 255, 0.05);
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+      background: linear-gradient(180deg, #030615, var(--bg));
+      color: var(--text);
+      line-height: 1.5;
+      overflow: hidden;
+    }
+    
+    #app {
+      height: 100vh;
+      display: flex;
+      position: relative;
+    }
+    
+    /* 左侧控制面板 */
+    .control-panel {
+      width: 420px;
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(11, 22, 34, 0.95);
+      border-right: 1px solid var(--border);
+      z-index: 10;
+      overflow-y: auto;
+    }
+    
+    .panel-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(11, 22, 34, 0.95);
+      z-index: 10;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    
+    .panel-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-left {
+      display:flex;
+      flex-direction:column;
+    }
+
+    .panel-right {
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    
+    .panel-title-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent1));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #021;
+      font-size: 20px;
+    }
+    
+    .panel-subtitle {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    
+    /* 折叠面板 */
+    .collapsible-section {
+      margin-bottom: 8px;
+    }
+    
+    .section-header {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .section-header:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .section-title {
+      font-weight: 600;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .section-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(6, 182, 212, 0.1);
+      color: var(--accent2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    
+    .section-content {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: none;
+    }
+    
+    .section-content.expanded {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+    
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* AI选择器 */
+    .ai-selector-container {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    
+    .ai-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .ai-option {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .ai-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--accent2);
+      transform: translateY(-2px);
+    }
+    
+    .ai-option.selected {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(6, 182, 212, 0.08));
+      border-color: var(--accent1);
+    }
+    
+    .ai-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    
+    .ai-name {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .ai-status {
+      font-size: 10px;
+      color: var(--muted);
+    }
+    
+    /* 功能按钮 */
+    .function-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    
+    .function-btn {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    
+    .function-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--accent2);
+      transform: translateY(-2px);
+    }
+    
+    .function-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    
+    .function-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .function-desc {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    
+    /* 表单元素 */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: inherit;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent2);
+    }
+    
+    /* 按钮 */
+    .btn {
+      padding: 12px 20px;
+      border-radius: 8px;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(90deg, var(--accent2), var(--accent1));
+      color: #021;
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+    
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+    
+    /* 右侧浏览器区域 */
+    .browser-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    .browser-header {
+      padding: 16px 20px;
+      background: rgba(11, 22, 34, 0.9);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .url-input {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: inherit;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .url-input:focus {
+      outline: none;
+      border-color: var(--accent2);
+    }
+    
+    .browser-controls {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .browser-btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 0;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .browser-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+    
+    .browser-container {
+      flex: 1;
+      position: relative;
+      background: #000;
+    }
+    
+    .iframe-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #aiFrame {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    /* 分屏模式 - 增强版 */
+    .split-screen {
+      display: flex;
+      height: 100%;
+      gap: 0;
+      flex-wrap: nowrap;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .split-panel {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+      max-width: 100%;
+    }
+    
+    .split-panel .iframe-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: calc(100% - 48px);
+    }
+    
+    /* 分屏拖拽调整大小 */
+    .split-resizer {
+      width: 8px;
+      background: rgba(6, 182, 212, 0.1);
+      cursor: col-resize;
+      position: relative;
+      z-index: 10;
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+    
+    .split-resizer:hover, .split-resizer.resizing {
+      background: rgba(6, 182, 212, 0.3);
+    }
+    
+    .split-resizer::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 40px;
+      background: var(--accent2);
+      border-radius: 1px;
+      opacity: 0.5;
+    }
+    
+    /* 分屏头部增强 */
+    .split-header {
+      padding: 8px 12px;
+      background: rgba(11, 22, 34, 0.9);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 48px;
+      flex-shrink: 0;
+    }
+    
+    .split-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+    
+    .split-ai-selector {
+      position: relative;
+      min-width: 150px;
+      margin-right: 8px;
+    }
+    
+    .split-ai-select {
+      width: 100%;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: inherit;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239fb0c8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 12px;
+      padding-right: 28px;
+    }
+    
+    .split-ai-select:focus {
+      outline: none;
+      border-color: var(--accent2);
+    }
+    
+    .split-controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    
+    .split-control-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s ease;
+    }
+    
+    .split-control-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+    
+    /* 小屏幕自适应 */
+    @media (max-width: 900px) {
+      #app { 
+        flex-direction: column; 
+        height: 100vh;
+      }
+      
+      .control-panel { 
+        width: 100%; 
+        min-width: 100%; 
+        max-height: 40vh;
+      }
+      
+      .resize-handle { 
+        display: none; 
+      }
+      
+      .browser-panel { 
+        width: 100%; 
+        height: 60vh;
+        flex: none;
+      }
+      
+      .split-screen { 
+        flex-direction: column; 
+        height: 100%;
+      }
+      
+      .split-panel { 
+        width: 100% !important;
+        height: 50% !important;
+        min-width: 100%;
+        min-height: 200px;
+      }
+      
+      .split-resizer {
+        width: 100%;
+        height: 8px;
+        cursor: row-resize;
+      }
+      
+      .split-resizer::after {
+        width: 40px;
+        height: 2px;
+      }
+    }
+    
+    /* 添加分屏按钮区域 */
+    .add-split-container {
+      display: flex;
+      justify-content: center;
+      padding: 8px;
+      background: rgba(11, 22, 34, 0.8);
+      border-top: 1px solid var(--border);
+    }
+    
+    .add-split-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: linear-gradient(90deg, var(--accent1), var(--accent5));
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .add-split-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+    
+    .add-split-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    /* 加载动画 */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(6, 182, 212, 0.3);
+      border-top-color: var(--accent2);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 可调节分割线 */
+    .resize-handle {
+      width: 12px;
+      cursor: col-resize;
+      background: rgba(255, 255, 255, 0.02);
+      position: relative;
+      flex-shrink: 0;
+      z-index: 30;
+    }
+    
+    .resize-handle:hover {
+      background: rgba(6, 182, 212, 0.12);
+    }
+    
+    .resize-handle:active {
+      background: rgba(6, 182, 212, 0.2);
+    }
+    
+    .resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 40px;
+      background: rgba(6, 182, 212, 0.3);
+      border-radius: 1px;
+    }
+    
+    /* 通知 */
+    .notification {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+      max-width: 400px;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .notification.success {
+      border-left: 4px solid var(--accent3);
+    }
+    
+    .notification.warning {
+      border-left: 4px solid var(--warning);
+    }
+    
+    .notification.error {
+      border-left: 4px solid var(--error);
+    }
+    
+    /* 模态框 */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      width: 90%;
+      max-width: 500px;
+      background: var(--card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-body {
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .modal-footer {
+      padding: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    /* AI聊天历史 */
+    .chat-history {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+    
+    .chat-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .chat-ai {
+      font-weight: 600;
+      color: var(--accent2);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .chat-time {
+      font-size: 11px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    
+    .chat-text {
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    
+    /* 代码编辑器 */
+    .code-editor {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      tab-size: 2;
+    }
+    
+    /* 任务列表 */
+    .task-list {
+      margin-top: 16px;
+    }
+    
+    .task-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    
+    .task-checkbox {
+      margin-right: 10px;
+    }
+    
+    .task-text {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .task-completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    
+    /* 统计卡片 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+    
+    .stat-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    
+    /* 快捷键提示 */
+    .shortcuts {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .shortcut-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    
+    .shortcut-key {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    
+    /* 返回按钮 */
+    .return-btn {
+      position: static;
+      margin-left: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 100;
+      transition: all 0.2s ease;
+    }
+    
+    .return-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent2);
+      color: var(--text);
+    }
+    
+    /* AI搜索框 */
+    .ai-search {
+      margin-bottom: 16px;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: inherit;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent2);
+    }
+    
+    /* 滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(6, 182, 212, 0.3);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(6, 182, 212, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 左侧控制面板 -->
+    <div class="control-panel">
+      <div class="panel-header">
+          <div class="panel-left">
+            <div class="panel-title">
+              <div class="panel-title-icon">AI</div>
+              <div>AI协作控制中心</div>
+            </div>
+            <div class="panel-subtitle">多AI选择、智能协作、笔记记录与更多功能</div>
+          </div>
+          <div class="panel-right">
+            <button class="return-btn" id="returnMain">🏠 返回主页</button>
+          </div>
+        </div>
+      
+      <!-- AI选择器 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="ai-selector">
+          <div class="section-title">
+            <div class="section-icon">🤖</div>
+            <span>AI选择器 (已选择: <span id="selectedCount">1</span>)</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="ai-selector-content">
+          <div class="ai-search">
+            <input type="text" id="aiSearch" class="search-input" placeholder="搜索AI...">
+          </div>
+          
+          <div class="ai-selector-container">
+            <div class="ai-selector-grid" id="aiSelectorGrid">
+              <!-- AI选项会动态生成 -->
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">自定义AI URL：</label>
+            <div class="btn-group">
+              <input type="text" id="customAiUrl" class="form-input" placeholder="https://example.com" style="flex:1;">
+              <button id="addCustomAi" class="btn btn-secondary btn-small">添加</button>
+            </div>
+          </div>
+          
+          <div class="btn-group">
+            <button id="openSelectedAi" class="btn btn-primary" style="flex:1;">
+              🚀 打开选中的AI
+            </button>
+            <button id="multiOpenAi" class="btn btn-secondary">
+              ⚡ 多开
+            </button>
+          </div>
+          
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button id="selectAllAi" class="btn btn-small btn-secondary" style="flex: 1;">全选</button>
+            <button id="deselectAllAi" class="btn btn-small btn-secondary" style="flex: 1;">全不选</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 智能功能 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="smart-functions">
+          <div class="section-title">
+            <div class="section-icon">✨</div>
+            <span>智能功能</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="smart-functions-content">
+          <div class="function-grid">
+            <div class="function-btn" data-function="split-screen">
+              <div class="function-icon">🖥️</div>
+              <div class="function-title">分屏对比</div>
+              <div class="function-desc">同时查看多个AI的回答</div>
+            </div>
+            
+            <div class="function-btn" data-function="auto-query">
+              <div class="function-icon">🤖</div>
+              <div class="function-title">自动提问</div>
+              <div class="function-desc">向所有AI发送相同问题</div>
+            </div>
+            
+            <div class="function-btn" data-function="answer-compare">
+              <div class="function-icon">📊</div>
+              <div class="function-title">答案对比</div>
+              <div class="function-desc">比较不同AI的回答差异</div>
+            </div>
+            
+            <div class="function-btn" data-function="ai-chat">
+              <div class="function-icon">💬</div>
+              <div class="function-title">AI对话</div>
+              <div class="function-desc">模拟AI间的对话</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 问题输入 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="question-input">
+          <div class="section-title">
+            <div class="section-icon">❓</div>
+            <span>问题输入</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="question-input-content">
+          <div class="form-group">
+            <label class="form-label">问题内容：</label>
+            <textarea id="questionInput" class="form-textarea" placeholder="输入您想要向AI提问的问题...">人工智能在未来十年内会对社会产生哪些重大影响？</textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">问题预设：</label>
+            <select id="questionPreset" class="form-input">
+              <option value="">选择预设问题...</option>
+              <option value="解释量子计算的基本原理">解释量子计算的基本原理</option>
+              <option value="如何学习编程？">如何学习编程？</option>
+              <option value="写一首关于AI的诗歌">写一首关于AI的诗歌</option>
+              <option value="制定一个健身计划">制定一个健身计划</option>
+              <option value="如何投资理财？">如何投资理财？</option>
+              <option value="解释区块链技术">解释区块链技术</option>
+            </select>
+          </div>
+          
+          <div class="btn-group">
+            <button id="sendToAi" class="btn btn-primary" style="flex:1;">
+              📤 发送到AI
+            </button>
+            <button id="saveQuestion" class="btn btn-secondary">
+              💾 保存
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 笔记与记录 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="notes-records">
+          <div class="section-title">
+            <div class="section-icon">📝</div>
+            <span>笔记与记录</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="notes-records-content">
+          <div class="form-group">
+            <label class="form-label">笔记标题：</label>
+            <input type="text" id="noteTitle" class="form-input" placeholder="笔记标题">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">笔记内容：</label>
+            <textarea id="noteContent" class="form-textarea" placeholder="记录您的想法或AI回答..."></textarea>
+          </div>
+          
+          <div class="btn-group">
+            <button id="saveNote" class="btn btn-primary" style="flex:1;">
+              💾 保存笔记
+            </button>
+            <button id="clearNotes" class="btn btn-secondary">
+              🗑️ 清空
+            </button>
+          </div>
+          
+          <div class="chat-history" id="chatHistory">
+            <!-- 聊天历史会动态生成 -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- 工具箱 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="toolbox">
+          <div class="section-title">
+            <div class="section-icon">🧰</div>
+            <span>工具箱</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="toolbox-content">
+          <div class="function-grid">
+            <div class="function-btn" data-function="code-editor">
+              <div class="function-icon">💻</div>
+              <div class="function-title">代码编辑器</div>
+              <div class="function-desc">编辑和运行代码片段</div>
+            </div>
+            
+            <div class="function-btn" data-function="task-manager">
+              <div class="function-icon">✅</div>
+              <div class="function-title">任务管理</div>
+              <div class="function-desc">跟踪和管理任务</div>
+            </div>
+            
+            <div class="function-btn" data-function="text-tools">
+              <div class="function-icon">📄</div>
+              <div class="function-title">文本工具</div>
+              <div class="function-desc">字数统计、格式化等</div>
+            </div>
+            
+            <div class="function-btn" data-function="quick-calc">
+              <div class="function-icon">🧮</div>
+              <div class="function-title">快速计算</div>
+              <div class="function-desc">简单计算和单位转换</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 统计信息 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="stats">
+          <div class="section-title">
+            <div class="section-icon">📈</div>
+            <span>统计信息</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="stats-content">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="aiCount">0</div>
+              <div class="stat-label">可用AI</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="queryCount">0</div>
+              <div class="stat-label">查询次数</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="noteCount">0</div>
+              <div class="stat-label">笔记数量</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="sessionTime">0</div>
+              <div class="stat-label">使用时间(分)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 快捷键提示 -->
+      <div class="collapsible-section">
+        <div class="section-header" data-section="shortcuts">
+          <div class="section-title">
+            <div class="section-icon">⌨️</div>
+            <span>快捷键</span>
+          </div>
+          <div class="section-toggle">▼</div>
+        </div>
+        <div class="section-content" id="shortcuts-content">
+          <div class="shortcuts">
+            <div class="shortcut-item">
+              <span>发送问题</span>
+              <span class="shortcut-key">Ctrl + Enter</span>
+            </div>
+            <div class="shortcut-item">
+              <span>新建笔记</span>
+              <span class="shortcut-key">Ctrl + N</span>
+            </div>
+            <div class="shortcut-item">
+              <span>切换分屏</span>
+              <span class="shortcut-key">Ctrl + S</span>
+            </div>
+            <div class="shortcut-item">
+              <span>返回主页</span>
+              <span class="shortcut-key">Shift + Esc</span>
+            </div>
+            <div class="shortcut-item">
+              <span>全选AI</span>
+              <span class="shortcut-key">Ctrl + A</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 可调节分割线 -->
+    <div class="resize-handle" id="resizeHandle"></div>
+    
+    <!-- 右侧浏览器区域 -->
+    <div class="browser-panel">
+      <div class="browser-header">
+        <input type="text" id="urlInput" class="url-input" value="https://chat.deepseek.com" placeholder="输入AI网站URL">
+        <div class="browser-controls">
+          <button id="goBack" class="browser-btn" title="后退">
+            <span>←</span>
+          </button>
+          <button id="goForward" class="browser-btn" title="前进">
+            <span>→</span>
+          </button>
+          <button id="refreshPage" class="browser-btn" title="刷新">
+            <span>↻</span>
+          </button>
+          <button id="goHome" class="browser-btn" title="首页">
+            <span>🏠</span>
+          </button>
+          <button id="toggleSplit" class="browser-btn" title="分屏模式">
+            <span>🖥️</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="browser-container" id="browserContainer">
+        <!-- 单屏模式 -->
+        <div class="iframe-container" id="singleScreen">
+          <iframe id="aiFrame" src="https://chat.deepseek.com"></iframe>
+        </div>
+        
+        <!-- 分屏模式 - 增强版 -->
+        <div class="split-screen" id="splitScreen" style="display: none;">
+          <!-- 分屏面板会动态生成 -->
+        </div>
+        
+        <!-- 加载动画 -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+          <div class="loading-spinner"></div>
+          <div>正在加载AI网站...</div>
+        </div>
+      </div>
+      
+      <!-- 添加分屏按钮区域 -->
+      <div class="add-split-container" id="addSplitContainer" style="display: none;">
+        <button class="add-split-btn" id="addSplitBtn">
+          <span>+</span> 添加分屏面板
+        </button>
+      </div>
+    </div>
+    
+    <!-- 模态框 -->
+    <div class="modal" id="multiOpenModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>选择要打开的AI网站</h3>
+          <button id="closeModal" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px;">×</button>
+        </div>
+        <div class="modal-body" id="modalAiList">
+          <!-- 选项会动态生成 -->
+        </div>
+        <div class="modal-footer">
+          <button id="cancelMultiOpen" class="btn btn-secondary">取消</button>
+          <button id="confirmMultiOpen" class="btn btn-primary">打开选中的网站</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 代码编辑器模态框 -->
+    <div class="modal" id="codeEditorModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>代码编辑器</h3>
+          <button class="close-code-editor" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px;">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">选择语言：</label>
+            <select id="codeLanguage" class="form-input">
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+              <option value="php">PHP</option>
+              <option value="sql">SQL</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">代码：</label>
+            <textarea id="codeEditor" class="form-textarea code-editor" rows="15" placeholder="输入您的代码...">// JavaScript示例
+function helloWorld() {
+  console.log("Hello, AI World!");
+  return "代码执行成功！";
+}
+
+// 调用函数
+helloWorld();</textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">执行结果：</label>
+            <textarea id="codeOutput" class="form-textarea" rows="4" placeholder="执行结果将显示在这里..." readonly></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="runCode" class="btn btn-primary">运行代码</button>
+          <button id="clearCode" class="btn btn-secondary">清空</button>
+          <button class="close-code-editor btn btn-secondary">关闭</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 任务管理器模态框 -->
+    <div class="modal" id="taskManagerModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>任务管理器</h3>
+          <button class="close-task-manager" style="background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px;">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">新任务：</label>
+            <div class="btn-group">
+              <input type="text" id="newTaskInput" class="form-input" placeholder="输入新任务...">
+              <button id="addTask" class="btn btn-primary btn-small">添加</button>
+            </div>
+          </div>
+          
+          <div class="task-list" id="taskList">
+            <!-- 任务会动态生成 -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="clearCompletedTasks" class="btn btn-secondary">清除已完成</button>
+          <button class="close-task-manager btn btn-secondary">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 扩展的AI网站配置
+    const AI_WEBSITES = [
+      { 
+        id: 'deepseek', 
+        name: 'DeepSeek', 
+        url: 'https://chat.deepseek.com', 
+        icon: '🤖', 
+        color: '#1a73e8',
+        status: '在线',
+        category: '通用AI'
+      },
+      { 
+        id: 'chatgpt', 
+        name: 'ChatGPT', 
+        url: 'https://chat.openai.com', 
+        icon: '✨', 
+        color: '#10a37f',
+        status: '在线',
+        category: '通用AI'
+      },
+      { 
+        id: 'claude', 
+        name: 'Claude', 
+        url: 'https://claude.ai', 
+        icon: '🧠', 
+        color: '#d946ef',
+        status: '在线',
+        category: '通用AI'
+      },
+      { 
+        id: 'gemini', 
+        name: 'Gemini', 
+        url: 'https://gemini.google.com', 
+        icon: '🔮', 
+        color: '#ea4335',
+        status: '在线',
+        category: '通用AI'
+      },
+      { 
+        id: 'wenxin', 
+        name: '文心一言', 
+        url: 'https://yiyan.baidu.com', 
+        icon: '🌸', 
+        color: '#1890ff',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'tongyi', 
+        name: '通义千问', 
+        url: 'https://tongyi.aliyun.com', 
+        icon: '🌌', 
+        color: '#ff6b35',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'kimi', 
+        name: 'Kimi', 
+        url: 'https://kimi.moonshot.cn', 
+        icon: '🌙', 
+        color: '#8b5cf6',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'chatglm', 
+        name: '智谱清言', 
+        url: 'https://chatglm.cn', 
+        icon: '💬', 
+        color: '#10b981',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'spark', 
+        name: '讯飞星火', 
+        url: 'https://xinghuo.xfyun.cn', 
+        icon: '🔥', 
+        color: '#f59e0b',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'hunyuan', 
+        name: '腾讯混元', 
+        url: 'https://hunyuan.tencent.com', 
+        icon: '☁️', 
+        color: '#3b82f6',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'doubao', 
+        name: '豆包', 
+        url: 'https://www.doubao.com', 
+        icon: '🫘', 
+        color: '#ec4899',
+        status: '在线',
+        category: '中文AI'
+      },
+      { 
+        id: 'copilot', 
+        name: 'Copilot', 
+        url: 'https://copilot.microsoft.com', 
+        icon: '🤝', 
+        color: '#047857',
+        status: '在线',
+        category: '编程AI'
+      },
+      { 
+        id: 'phind', 
+        name: 'Phind', 
+        url: 'https://www.phind.com', 
+        icon: '🔍', 
+        color: '#3b82f6',
+        status: '在线',
+        category: '编程AI'
+      },
+      { 
+        id: 'perplexity', 
+        name: 'Perplexity', 
+        url: 'https://www.perplexity.ai', 
+        icon: '🤔', 
+        color: '#10b981',
+        status: '在线',
+        category: '研究AI'
+      },
+      { 
+        id: 'pi', 
+        name: 'Pi', 
+        url: 'https://pi.ai', 
+        icon: '🥧', 
+        color: '#8b5cf6',
+        status: '在线',
+        category: '聊天AI'
+      },
+      { 
+        id: 'character', 
+        name: 'Character.AI', 
+        url: 'https://character.ai', 
+        icon: '👤', 
+        color: '#ec4899',
+        status: '在线',
+        category: '角色AI'
+      },
+      { 
+        id: 'midjourney', 
+        name: 'Midjourney', 
+        url: 'https://www.midjourney.com', 
+        icon: '🎨', 
+        color: '#1d4ed8',
+        status: '在线',
+        category: '图像AI'
+      },
+      { 
+        id: 'notion', 
+        name: 'Notion AI', 
+        url: 'https://www.notion.so', 
+        icon: '📝', 
+        color: '#000000',
+        status: '在线',
+        category: '写作AI'
+      },
+      { 
+        id: 'quillbot', 
+        name: 'QuillBot', 
+        url: 'https://quillbot.com', 
+        icon: '✍️', 
+        color: '#7c3aed',
+        status: '在线',
+        category: '写作AI'
+      },
+      { 
+        id: 'grammarly', 
+        name: 'Grammarly', 
+        url: 'https://www.grammarly.com', 
+        icon: '📚', 
+        color: '#10b981',
+        status: '在线',
+        category: '写作AI'
+      }
+    ];
+
+    // 应用状态
+    const state = {
+      currentAI: 'DeepSeek',
+      currentUrl: 'https://chat.deepseek.com',
+      selectedAIs: new Set(['deepseek']),
+      notes: [],
+      chatHistory: [],
+      tasks: [],
+      queryCount: 0,
+      sessionStartTime: new Date(),
+      isSplitScreen: false,
+      activeSection: 'ai-selector',
+      aiFilter: '',
+      customAIs: [],
+      splitPanels: [], // 存储分屏面板信息
+      maxSplitPanels: 4 // 最大分屏数量
+    };
+
+    // 初始化应用
+    function init() {
+      setupEventListeners();
+      setupResizeHandle();
+      loadData();
+      updateAiSelector();
+      updateChatHistory();
+      updateStats();
+      updateTaskList();
+      
+      // 默认展开AI选择器
+      toggleSection('ai-selector');
+      
+      // 显示通知
+      setTimeout(() => {
+        showNotification('AI协作系统已就绪！选择AI并开始提问。', 'success');
+      }, 1000);
+      
+      // 启动会话时间计时器
+      setInterval(updateStats, 60000);
+    }
+
+    // 设置事件监听器
+    function setupEventListeners() {
+      // 折叠面板切换
+      document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+          const section = e.currentTarget.dataset.section;
+          toggleSection(section);
+        });
+      });
+      
+      // AI搜索
+      document.getElementById('aiSearch').addEventListener('input', (e) => {
+        state.aiFilter = e.target.value.toLowerCase();
+        updateAiSelector();
+      });
+      
+      // AI选择
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.ai-option')) {
+          const aiOption = e.target.closest('.ai-option');
+          const aiId = aiOption.dataset.id;
+          
+          if (e.ctrlKey || e.metaKey) {
+            // Ctrl+点击：多选
+            toggleAiSelection(aiId);
+          } else if (e.shiftKey) {
+            // Shift+点击：范围选择
+            selectAiRange(aiId);
+          } else {
+            // 普通点击：单选并打开
+            selectSingleAi(aiId);
+            const ai = getAllAIs().find(a => a.id === aiId);
+            if (ai) {
+              openAiWebsite(ai.url, ai.name);
+            }
+          }
+        }
+      });
+      
+      // 功能按钮
+      document.querySelectorAll('.function-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const functionName = e.currentTarget.dataset.function;
+          executeFunction(functionName);
+        });
+      });
+      
+      // 按钮事件
+      document.getElementById('openSelectedAi').addEventListener('click', openSelectedAi);
+      document.getElementById('multiOpenAi').addEventListener('click', openMultiAiModal);
+      document.getElementById('addCustomAi').addEventListener('click', addCustomAi);
+      document.getElementById('sendToAi').addEventListener('click', sendToAi);
+      document.getElementById('saveQuestion').addEventListener('click', saveQuestion);
+      document.getElementById('saveNote').addEventListener('click', saveNote);
+      document.getElementById('clearNotes').addEventListener('click', clearNotes);
+      document.getElementById('selectAllAi').addEventListener('click', selectAllAi);
+      document.getElementById('deselectAllAi').addEventListener('click', deselectAllAi);
+      document.getElementById('addSplitBtn').addEventListener('click', addSplitPanel);
+      
+      document.getElementById('questionPreset').addEventListener('change', (e) => {
+        if (e.target.value) {
+          document.getElementById('questionInput').value = e.target.value;
+        }
+      });
+      
+      // 返回主页
+      document.getElementById('returnMain').addEventListener('click', returnToMain);
+      
+      // 浏览器控制
+      document.getElementById('goBack').addEventListener('click', () => {
+        try {
+          if (state.isSplitScreen && state.splitPanels.length > 0) {
+            const firstPanel = state.splitPanels[0];
+            const frame = document.getElementById(`splitFrame${firstPanel.id}`);
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.history.back();
+            }
+          } else {
+            document.getElementById('aiFrame').contentWindow.history.back();
+          }
+        } catch (e) {
+          showNotification('无法后退（跨域限制）', 'warning');
+        }
+      });
+      
+      document.getElementById('goForward').addEventListener('click', () => {
+        try {
+          if (state.isSplitScreen && state.splitPanels.length > 0) {
+            const firstPanel = state.splitPanels[0];
+            const frame = document.getElementById(`splitFrame${firstPanel.id}`);
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.history.forward();
+            }
+          } else {
+            document.getElementById('aiFrame').contentWindow.history.forward();
+          }
+        } catch (e) {
+          showNotification('无法前进（跨域限制）', 'warning');
+        }
+      });
+      
+      document.getElementById('refreshPage').addEventListener('click', () => {
+        if (state.isSplitScreen) {
+          state.splitPanels.forEach(panel => {
+            const frame = document.getElementById(`splitFrame${panel.id}`);
+            if (frame) {
+              frame.src = frame.src;
+            }
+          });
+        } else {
+          const iframe = document.getElementById('aiFrame');
+          iframe.src = iframe.src;
+        }
+        showLoading(true);
+      });
+      
+      document.getElementById('goHome').addEventListener('click', () => {
+        if (state.isSplitScreen) {
+          openAiWebsite(state.currentUrl, state.currentAI);
+        } else {
+          openAiWebsite(state.currentUrl, state.currentAI);
+        }
+      });
+      
+      document.getElementById('toggleSplit').addEventListener('click', toggleSplitScreen);
+      
+      // URL输入框
+      document.getElementById('urlInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const url = e.target.value.trim();
+          if (url) {
+            openAiWebsite(url, '自定义网站');
+          }
+        }
+      });
+      
+      // iframe加载事件
+      document.getElementById('aiFrame').addEventListener('load', () => {
+        showLoading(false);
+      });
+      
+      // 分屏iframe加载事件会在创建时动态添加
+      
+      // 模态框事件
+      document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('multiOpenModal').style.display = 'none';
+      });
+      
+      document.getElementById('cancelMultiOpen').addEventListener('click', () => {
+        document.getElementById('multiOpenModal').style.display = 'none';
+      });
+      
+      document.getElementById('confirmMultiOpen').addEventListener('click', openSelectedAIs);
+      
+      // 代码编辑器事件
+      document.querySelectorAll('.close-code-editor').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('codeEditorModal').style.display = 'none';
+        });
+      });
+      
+      document.getElementById('runCode').addEventListener('click', runCode);
+      document.getElementById('clearCode').addEventListener('click', () => {
+        document.getElementById('codeEditor').value = '';
+        document.getElementById('codeOutput').value = '';
+      });
+      
+      // 任务管理器事件
+      document.querySelectorAll('.close-task-manager').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('taskManagerModal').style.display = 'none';
+        });
+      });
+      
+      document.getElementById('addTask').addEventListener('click', addTask);
+      document.getElementById('clearCompletedTasks').addEventListener('click', clearCompletedTasks);
+      
+      // 键盘快捷键
+      document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Enter 发送问题
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault();
+          sendToAi();
+        }
+        
+        // Ctrl/Cmd + N 新建笔记
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+          e.preventDefault();
+          document.getElementById('noteTitle').value = '';
+          document.getElementById('noteContent').value = '';
+        }
+        
+        // Ctrl/Cmd + S 切换分屏
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          toggleSplitScreen();
+        }
+        
+        // Ctrl/Cmd + A 全选AI
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+          if (state.activeSection === 'ai-selector') {
+            e.preventDefault();
+            selectAllAi();
+          }
+        }
+        
+        // Esc 关闭所有模态框
+        if (e.key === 'Escape') {
+          document.getElementById('multiOpenModal').style.display = 'none';
+          document.getElementById('codeEditorModal').style.display = 'none';
+          document.getElementById('taskManagerModal').style.display = 'none';
+        }
+
+        // Shift + Esc 返回主界面
+        if (e.shiftKey && e.key === 'Escape') {
+          e.preventDefault();
+          returnToMain();
+        }
+      });
+    }
+
+    // 设置可调节分割线
+    function setupResizeHandle() {
+      const resizeHandle = document.getElementById('resizeHandle');
+      const controlPanel = document.querySelector('.control-panel');
+      if (!resizeHandle || !controlPanel) return;
+      
+      let isResizing = false;
+      let startX = 0;
+      let startWidth = 0;
+      const minW = 320;
+      const maxW = 800;
+      
+      function onPointerDown(clientX) {
+        isResizing = true;
+        startX = clientX;
+        startWidth = controlPanel.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+      }
+      
+      function onPointerMove(clientX) {
+        if (!isResizing) return;
+        const deltaX = clientX - startX;
+        const newWidth = Math.max(minW, Math.min(maxW, startWidth + deltaX));
+        controlPanel.style.width = `${newWidth}px`;
+        controlPanel.style.minWidth = `${newWidth}px`;
+      }
+      
+      function onPointerUp() {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+        }
+      }
+
+      // Mouse events
+      resizeHandle.addEventListener('mousedown', (e) => {
+        onPointerDown(e.clientX);
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', (e) => onPointerMove(e.clientX));
+      document.addEventListener('mouseup', onPointerUp);
+
+      // Touch events
+      resizeHandle.addEventListener('touchstart', (e) => {
+        const t = e.touches[0];
+        onPointerDown(t.clientX);
+        e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        onPointerMove(t.clientX);
+      }, { passive: false });
+      document.addEventListener('touchend', onPointerUp);
+
+      // Prevent text selection during drag
+      document.addEventListener('selectstart', (e) => {
+        if (isResizing) e.preventDefault();
+      });
+    }
+
+    // 获取所有AI（包括自定义）
+    function getAllAIs() {
+      return [...AI_WEBSITES, ...state.customAIs];
+    }
+
+    // 切换面板展开/折叠
+    function toggleSection(sectionId) {
+      const content = document.getElementById(`${sectionId}-content`);
+      const toggle = document.querySelector(`[data-section="${sectionId}"] .section-toggle`);
+      
+      if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        toggle.textContent = '▼';
+        state.activeSection = null;
+      } else {
+        // 关闭其他面板
+        document.querySelectorAll('.section-content').forEach(el => {
+          el.classList.remove('expanded');
+        });
+        document.querySelectorAll('.section-toggle').forEach(el => {
+          el.textContent = '▼';
+        });
+        
+        // 打开当前面板
+        content.classList.add('expanded');
+        toggle.textContent = '▲';
+        state.activeSection = sectionId;
+      }
+    }
+
+    // 更新AI选择器
+    function updateAiSelector() {
+      const aiSelectorGrid = document.getElementById('aiSelectorGrid');
+      const allAIs = getAllAIs();
+      
+      // 过滤AI
+      let filteredAIs = allAIs;
+      if (state.aiFilter) {
+        filteredAIs = allAIs.filter(ai => 
+          ai.name.toLowerCase().includes(state.aiFilter) || 
+          ai.category.toLowerCase().includes(state.aiFilter)
+        );
+      }
+      
+      // 按类别分组
+      const groupedAIs = {};
+      filteredAIs.forEach(ai => {
+        if (!groupedAIs[ai.category]) {
+          groupedAIs[ai.category] = [];
+        }
+        groupedAIs[ai.category].push(ai);
+      });
+      
+      let html = '';
+      
+      // 遍历每个类别
+      for (const category in groupedAIs) {
+        html += `<div style="grid-column: 1 / -1; font-size: 12px; color: var(--muted); margin: 10px 0 5px 0;">${category}</div>`;
+        
+        groupedAIs[category].forEach(ai => {
+          const isSelected = state.selectedAIs.has(ai.id);
+          html += `
+            <div class="ai-option ${isSelected ? 'selected' : ''}" data-id="${ai.id}" title="${ai.name} - ${ai.url}">
+              <div class="ai-icon" style="background: ${ai.color}20; color: ${ai.color}">${ai.icon}</div>
+              <div class="ai-name">${ai.name}</div>
+              <div class="ai-status">${ai.status}</div>
+            </div>
+          `;
+        });
+      }
+      
+      aiSelectorGrid.innerHTML = html;
+      document.getElementById('aiCount').textContent = allAIs.length;
+      document.getElementById('selectedCount').textContent = state.selectedAIs.size;
+    }
+
+    // 切换AI选择状态
+    function toggleAiSelection(aiId) {
+      if (state.selectedAIs.has(aiId)) {
+        state.selectedAIs.delete(aiId);
+      } else {
+        state.selectedAIs.add(aiId);
+      }
+      
+      updateAiSelector();
+    }
+
+    // 选择单个AI
+    function selectSingleAi(aiId) {
+      state.selectedAIs.clear();
+      state.selectedAIs.add(aiId);
+      updateAiSelector();
+    }
+
+    // 选择AI范围（Shift+点击）
+    function selectAiRange(aiId) {
+      const allAIs = getAllAIs();
+      const aiIndex = allAIs.findIndex(ai => ai.id === aiId);
+      const selectedAIs = Array.from(state.selectedAIs);
+      
+      if (selectedAIs.length === 0) {
+        state.selectedAIs.add(aiId);
+      } else {
+        const lastSelectedId = selectedAIs[selectedAIs.length - 1];
+        const lastSelectedIndex = allAIs.findIndex(ai => ai.id === lastSelectedId);
+        
+        const start = Math.min(aiIndex, lastSelectedIndex);
+        const end = Math.max(aiIndex, lastSelectedIndex);
+        
+        for (let i = start; i <= end; i++) {
+          state.selectedAIs.add(allAIs[i].id);
+        }
+      }
+      
+      updateAiSelector();
+    }
+
+    // 全选AI
+    function selectAllAi() {
+      const allAIs = getAllAIs();
+      allAIs.forEach(ai => {
+        state.selectedAIs.add(ai.id);
+      });
+      updateAiSelector();
+      showNotification(`已选择所有 ${allAIs.length} 个AI`, 'success');
+    }
+
+    // 全不选AI
+    function deselectAllAi() {
+      state.selectedAIs.clear();
+      updateAiSelector();
+      showNotification('已取消选择所有AI', 'info');
+    }
+
+    // 打开AI网站
+    function openAiWebsite(url, name, panelId = null) {
+      // 确保URL格式正确
+      let fullUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = 'https://' + url;
+      }
+      
+      // 更新状态
+      state.currentUrl = fullUrl;
+      state.currentAI = name;
+      document.getElementById('urlInput').value = fullUrl;
+      
+      // 显示加载中
+      showLoading(true);
+      
+      if (state.isSplitScreen && panelId) {
+        // 在指定分屏面板中打开
+        const frame = document.getElementById(`splitFrame${panelId}`);
+        if (frame) {
+          frame.src = fullUrl;
+        }
+      } else if (state.isSplitScreen && state.splitPanels.length > 0) {
+        // 在第一个分屏面板中打开
+        const firstPanel = state.splitPanels[0];
+        const frame = document.getElementById(`splitFrame${firstPanel.id}`);
+        if (frame) {
+          frame.src = fullUrl;
+        }
+      } else {
+        // 在单屏模式中打开
+        const iframe = document.getElementById('aiFrame');
+        iframe.src = fullUrl;
+      }
+      
+      showNotification(`正在打开${name}...`, 'info');
+    }
+
+    // 打开选中的AI
+    function openSelectedAi() {
+      if (state.selectedAIs.size === 0) {
+        showNotification('请至少选择一个AI', 'warning');
+        return;
+      }
+      
+      const selectedAiId = Array.from(state.selectedAIs)[0];
+      const allAIs = getAllAIs();
+      const ai = allAIs.find(a => a.id === selectedAiId);
+      
+      if (ai) {
+        openAiWebsite(ai.url, ai.name);
+      }
+    }
+
+    // 打开多开模态框
+    function openMultiAiModal() {
+      if (state.selectedAIs.size === 0) {
+        showNotification('请至少选择一个AI', 'warning');
+        return;
+      }
+      
+      const modalAiList = document.getElementById('modalAiList');
+      const allAIs = getAllAIs();
+      
+      let html = '';
+      
+      allAIs.forEach(ai => {
+        const isSelected = state.selectedAIs.has(ai.id);
+        html += `
+          <div class="ai-option ${isSelected ? 'selected' : ''}" style="margin-bottom: 10px;">
+            <input type="checkbox" id="modal-ai-${ai.id}" ${isSelected ? 'checked' : ''}>
+            <label for="modal-ai-${ai.id}" style="flex:1; cursor:pointer;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:${ai.color}20; color:${ai.color}; display:flex; align-items:center; justify-content:center;">${ai.icon}</div>
+                <div>
+                  <strong>${ai.name}</strong><br>
+                  <small style="color: var(--muted);">${ai.category} · ${ai.url.replace('https://', '').replace('http://', '')}</small>
+                </div>
+              </div>
+            </label>
+          </div>
+        `;
+      });
+      
+      modalAiList.innerHTML = html;
+      
+      // 添加复选框事件
+      modalAiList.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const aiId = e.target.id.replace('modal-ai-', '');
+          const aiOption = e.target.closest('.ai-option');
+          
+          if (e.target.checked) {
+            state.selectedAIs.add(aiId);
+            aiOption.classList.add('selected');
+          } else {
+            state.selectedAIs.delete(aiId);
+            aiOption.classList.remove('selected');
+          }
+          
+          updateAiSelector();
+        });
+      });
+      
+      document.getElementById('multiOpenModal').style.display = 'flex';
+    }
+
+    // 打开选中的多个AI
+    function openSelectedAIs() {
+      if (state.selectedAIs.size === 0) {
+        showNotification('请至少选择一个AI', 'warning');
+        return;
+      }
+      
+      // 关闭模态框
+      document.getElementById('multiOpenModal').style.display = 'none';
+      
+      // 打开每个选中的AI网站
+      const allAIs = getAllAIs();
+      const selectedAIs = allAIs.filter(ai => state.selectedAIs.has(ai.id));
+      
+      // 如果分屏模式开启，分配到分屏中
+      if (state.isSplitScreen && state.splitPanels.length > 0) {
+        selectedAIs.forEach((ai, index) => {
+          if (index < state.splitPanels.length) {
+            const panel = state.splitPanels[index];
+            openAiWebsite(ai.url, ai.name, panel.id);
+          } else {
+            // 如果分屏不够，在新标签页打开
+            setTimeout(() => {
+              window.open(ai.url, `ai_${ai.id}`);
+            }, index * 300);
+          }
+        });
+      } else {
+        // 在主窗口中打开第一个网站
+        const firstAi = selectedAIs[0];
+        openAiWebsite(firstAi.url, firstAi.name);
+        
+        // 在新标签页中打开其他网站
+        for (let i = 1; i < selectedAIs.length; i++) {
+          setTimeout(() => {
+            window.open(selectedAIs[i].url, `ai_${selectedAIs[i].id}`);
+          }, i * 300);
+        }
+      }
+      
+      showNotification(`已打开 ${selectedAIs.length} 个AI网站`, 'success');
+    }
+
+    // 添加自定义AI
+    function addCustomAi() {
+      const urlInput = document.getElementById('customAiUrl');
+      const url = urlInput.value.trim();
+      
+      if (!url) {
+        showNotification('请输入有效的URL', 'warning');
+        return;
+      }
+      
+      // 简单的URL验证
+      let fullUrl = url;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = 'https://' + url;
+      }
+      
+      // 创建自定义AI
+      const customAi = {
+        id: 'custom-' + Date.now(),
+        name: `自定义AI-${state.customAIs.length + 1}`,
+        url: fullUrl,
+        icon: '🔗',
+        color: '#9fb0c8',
+        status: '自定义',
+        category: '自定义AI'
+      };
+      
+      // 添加到自定义AI列表
+      state.customAIs.push(customAi);
+      updateAiSelector();
+      
+      // 选中这个AI
+      selectSingleAi(customAi.id);
+      
+      urlInput.value = '';
+      saveData(); // 保存自定义AI到本地存储
+      showNotification('自定义AI已添加', 'success');
+    }
+
+    // 发送问题到AI
+    function sendToAi() {
+      const question = document.getElementById('questionInput').value.trim();
+      
+      if (!question) {
+        showNotification('请输入问题内容', 'warning');
+        return;
+      }
+      
+      // 更新统计
+      state.queryCount++;
+      updateStats();
+      
+      // 添加到聊天历史
+      const chatItem = {
+        id: Date.now(),
+        type: 'question',
+        content: question,
+        ai: state.currentAI,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      
+      state.chatHistory.unshift(chatItem);
+      updateChatHistory();
+      saveData();
+      
+      // 尝试自动填写问题到AI网站
+      tryAutoFillQuestion(question);
+      
+      showNotification(`问题已发送到${state.currentAI}`, 'success');
+    }
+
+    // 尝试自动填写问题
+    function tryAutoFillQuestion(question) {
+      // 由于跨域限制，我们无法直接控制iframe中的内容
+      // 这里我们提供几种可能的自动填写方法
+      
+      // 方法1: 尝试通过postMessage发送（需要目标网站支持）
+      try {
+        if (state.isSplitScreen && state.splitPanels.length > 0) {
+          state.splitPanels.forEach(panel => {
+            const frame = document.getElementById(`splitFrame${panel.id}`);
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({
+                type: 'AI_QUESTION',
+                question: question
+              }, '*');
+            }
+          });
+        } else {
+          document.getElementById('aiFrame').contentWindow.postMessage({
+            type: 'AI_QUESTION',
+            question: question
+          }, '*');
+        }
+      } catch (e) {
+        // 忽略错误
+      }
+      
+      // 方法2: 显示提示让用户手动复制
+      showNotification(`问题已准备，请在AI网站中粘贴问题`, 'info');
+      
+      // 将问题复制到剪贴板
+      copyToClipboard(question);
+    }
+
+    // 保存问题
+    function saveQuestion() {
+      const question = document.getElementById('questionInput').value.trim();
+      
+      if (!question) {
+        showNotification('问题内容为空', 'warning');
+        return;
+      }
+      
+      // 添加到笔记
+      const note = {
+        id: Date.now(),
+        title: `问题: ${question.substring(0, 30)}${question.length > 30 ? '...' : ''}`,
+        content: question,
+        type: 'question',
+        timestamp: new Date().toLocaleString(),
+        linkedAi: state.currentAI
+      };
+      
+      state.notes.unshift(note);
+      saveData();
+      updateStats();
+      
+      showNotification('问题已保存到笔记', 'success');
+    }
+
+    // 保存笔记
+    function saveNote() {
+      const title = document.getElementById('noteTitle').value.trim();
+      const content = document.getElementById('noteContent').value.trim();
+      
+      if (!title && !content) {
+        showNotification('笔记标题和内容不能都为空', 'warning');
+        return;
+      }
+      
+      const note = {
+        id: Date.now(),
+        title: title || '未命名笔记',
+        content: content,
+        type: 'note',
+        timestamp: new Date().toLocaleString(),
+        linkedAi: state.currentAI
+      };
+      
+      state.notes.unshift(note);
+      saveData();
+      updateStats();
+      
+      // 清空编辑器
+      document.getElementById('noteTitle').value = '';
+      document.getElementById('noteContent').value = '';
+      
+      showNotification('笔记已保存', 'success');
+    }
+
+    // 清空笔记
+    function clearNotes() {
+      if (confirm('确定要清空所有笔记吗？此操作不可撤销。')) {
+        state.notes = [];
+        saveData();
+        updateStats();
+        showNotification('已清空所有笔记', 'info');
+      }
+    }
+
+    // 更新聊天历史
+    function updateChatHistory() {
+      const chatHistory = document.getElementById('chatHistory');
+      
+      if (state.chatHistory.length === 0) {
+        chatHistory.innerHTML = `
+          <div style="text-align:center; padding:20px; color:var(--muted);">
+            <div style="font-size:36px; margin-bottom:8px;">💬</div>
+            <div>暂无聊天记录</div>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      state.chatHistory.slice(0, 5).forEach(item => {
+        const isQuestion = item.type === 'question';
+        const shortContent = item.content.length > 80 ? 
+          item.content.substring(0, 80) + '...' : item.content;
+        
+        html += `
+          <div class="chat-item">
+            <div class="chat-ai">
+              ${isQuestion ? '❓' : '💬'} ${item.ai}
+              <span class="chat-time">${item.timestamp}</span>
+            </div>
+            <div class="chat-text">${escapeHtml(shortContent)}</div>
+          </div>
+        `;
+      });
+      
+      chatHistory.innerHTML = html;
+    }
+
+    // 执行功能
+    function executeFunction(functionName) {
+      switch(functionName) {
+        case 'split-screen':
+          toggleSplitScreen();
+          break;
+        case 'auto-query':
+          autoQueryAllAis();
+          break;
+        case 'answer-compare':
+          compareAiAnswers();
+          break;
+        case 'ai-chat':
+          simulateAiChat();
+          break;
+        case 'code-editor':
+          document.getElementById('codeEditorModal').style.display = 'flex';
+          break;
+        case 'task-manager':
+          document.getElementById('taskManagerModal').style.display = 'flex';
+          break;
+        case 'text-tools':
+          showTextTools();
+          break;
+        case 'quick-calc':
+          showQuickCalculator();
+          break;
+        default:
+          showNotification(`功能 ${functionName} 开发中`, 'info');
+      }
+    }
+
+    // 创建分屏面板
+    function createSplitPanel(panelId, ai = null, width = null) {
+      const splitScreen = document.getElementById('splitScreen');
+      
+      // 创建分屏面板
+      const panel = document.createElement('div');
+      panel.className = 'split-panel';
+      panel.id = `splitPanel${panelId}`;
+      if (width) {
+        panel.style.width = width;
+      }
+      
+      // 创建面板头部
+      const header = document.createElement('div');
+      header.className = 'split-header';
+      
+      // 创建标题区域
+      const title = document.createElement('div');
+      title.className = 'split-title';
+      title.innerHTML = `
+        <span>${ai ? ai.icon : '🤖'}</span>
+        <span>${ai ? ai.name : `AI ${panelId}`}</span>
+      `;
+      
+      // 创建AI选择器
+      const aiSelector = document.createElement('div');
+      aiSelector.className = 'split-ai-selector';
+      const select = document.createElement('select');
+      select.className = 'split-ai-select';
+      select.id = `splitAiSelect${panelId}`;
+      select.dataset.panelId = panelId;
+      
+      // 添加AI选项
+      const allAIs = getAllAIs();
+      allAIs.forEach(aiOption => {
+        const option = document.createElement('option');
+        option.value = aiOption.id;
+        option.textContent = `${aiOption.icon} ${aiOption.name}`;
+        if (ai && ai.id === aiOption.id) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+      
+      // 添加自定义URL选项
+      const customOption = document.createElement('option');
+      customOption.value = 'custom';
+      customOption.textContent = '🔗 自定义URL';
+      select.appendChild(customOption);
+      
+      aiSelector.appendChild(select);
+      
+      // 创建控制按钮
+      const controls = document.createElement('div');
+      controls.className = 'split-controls';
+      controls.innerHTML = `
+        <button class="split-control-btn" data-panel="${panelId}" data-action="swap" title="交换位置">↔️</button>
+        <button class="split-control-btn" data-panel="${panelId}" data-action="close" title="关闭面板">✕</button>
+      `;
+      
+      // 组装头部
+      header.appendChild(title);
+      header.appendChild(aiSelector);
+      header.appendChild(controls);
+      
+      // 创建iframe容器
+      const iframeContainer = document.createElement('div');
+      iframeContainer.className = 'iframe-container';
+      const iframe = document.createElement('iframe');
+      iframe.id = `splitFrame${panelId}`;
+      iframe.src = ai ? ai.url : 'https://chat.deepseek.com';
+      iframeContainer.appendChild(iframe);
+      
+      // 组装面板
+      panel.appendChild(header);
+      panel.appendChild(iframeContainer);
+      
+      // 添加面板到分屏容器
+      splitScreen.appendChild(panel);
+      
+      // 添加iframe加载事件
+      iframe.addEventListener('load', () => {
+        showLoading(false);
+      });
+      
+      // 添加AI选择器事件
+      select.addEventListener('change', (e) => {
+        const selectedAiId = e.target.value;
+        if (selectedAiId === 'custom') {
+          // 自定义URL
+          const customUrl = prompt('请输入自定义AI URL:', 'https://chat.deepseek.com');
+          if (customUrl) {
+            openAiWebsite(customUrl, '自定义AI', panelId);
+          }
+        } else {
+          const selectedAi = allAIs.find(ai => ai.id === selectedAiId);
+          if (selectedAi) {
+            openAiWebsite(selectedAi.url, selectedAi.name, panelId);
+          }
+        }
+      });
+      
+      // 添加控制按钮事件
+      controls.querySelectorAll('.split-control-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const action = e.currentTarget.dataset.action;
+          if (action === 'swap') {
+            swapSplitPanel(panelId);
+          } else if (action === 'close') {
+            removeSplitPanel(panelId);
+          }
+        });
+      });
+      
+      // 返回面板信息
+      return {
+        id: panelId,
+        ai: ai,
+        element: panel,
+        iframe: iframe
+      };
+    }
+
+    // 创建分屏调整器
+    function createSplitResizer(resizerId) {
+      const resizer = document.createElement('div');
+      resizer.className = 'split-resizer';
+      resizer.id = `splitResizer${resizerId}`;
+      resizer.dataset.resizerId = resizerId;
+      
+      return resizer;
+    }
+
+    // 初始化分屏模式
+    function initSplitScreen() {
+      const splitScreen = document.getElementById('splitScreen');
+      splitScreen.innerHTML = '';
+      state.splitPanels = [];
+      
+      // 获取选中的AI
+      const allAIs = getAllAIs();
+      const selectedAIs = Array.from(state.selectedAIs);
+      
+      // 创建初始分屏（最多2个）
+      const initialPanelCount = Math.min(2, Math.max(1, selectedAIs.length));
+      
+      for (let i = 1; i <= initialPanelCount; i++) {
+        let ai = null;
+        if (i <= selectedAIs.length) {
+          ai = allAIs.find(a => a.id === selectedAIs[i-1]);
+        } else if (i === 1) {
+          // 默认使用DeepSeek
+          ai = allAIs.find(a => a.id === 'deepseek');
+        }
+        
+        const panel = createSplitPanel(i, ai, i === 1 ? '50%' : null);
+        state.splitPanels.push(panel);
+        
+        // 在面板之间添加调整器（除了最后一个）
+        if (i < initialPanelCount) {
+          const resizer = createSplitResizer(i);
+          splitScreen.appendChild(resizer);
+          setupSplitResizer(resizer, i, i+1);
+        }
+      }
+      
+      // 显示添加分屏按钮
+      document.getElementById('addSplitContainer').style.display = 'flex';
+      updateAddSplitButton();
+      
+      // 设置分屏拖拽调整
+      setupSplitResizers();
+    }
+
+    // 设置分屏调整器
+    function setupSplitResizer(resizer, leftPanelId, rightPanelId) {
+      const leftPanel = document.getElementById(`splitPanel${leftPanelId}`);
+      const rightPanel = document.getElementById(`splitPanel${rightPanelId}`);
+      
+      if (!leftPanel || !rightPanel) return;
+      
+      let isResizing = false;
+      let startX = 0;
+      let startLeftWidth = 0;
+      let startRightWidth = 0;
+      const minWidth = 200; // 最小宽度
+      
+      resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startLeftWidth = leftPanel.offsetWidth;
+        startRightWidth = rightPanel.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+        resizer.classList.add('resizing');
+        e.preventDefault();
+      });
+      
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        
+        const deltaX = e.clientX - startX;
+        const newLeftWidth = startLeftWidth + deltaX;
+        const newRightWidth = startRightWidth - deltaX;
+        
+        // 检查最小宽度
+        if (newLeftWidth >= minWidth && newRightWidth >= minWidth) {
+          leftPanel.style.width = `${newLeftWidth}px`;
+          rightPanel.style.flex = 'none';
+          rightPanel.style.width = `${newRightWidth}px`;
+        }
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          document.body.style.cursor = '';
+          resizer.classList.remove('resizing');
+        }
+      });
+      
+      // 触摸屏支持
+      resizer.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        isResizing = true;
+        startX = touch.clientX;
+        startLeftWidth = leftPanel.offsetWidth;
+        startRightWidth = rightPanel.offsetWidth;
+        resizer.classList.add('resizing');
+        e.preventDefault();
+      }, { passive: false });
+      
+      document.addEventListener('touchmove', (e) => {
+        if (!isResizing) return;
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - startX;
+        const newLeftWidth = startLeftWidth + deltaX;
+        const newRightWidth = startRightWidth - deltaX;
+        
+        if (newLeftWidth >= minWidth && newRightWidth >= minWidth) {
+          leftPanel.style.width = `${newLeftWidth}px`;
+          rightPanel.style.flex = 'none';
+          rightPanel.style.width = `${newRightWidth}px`;
+        }
+      }, { passive: false });
+      
+      document.addEventListener('touchend', () => {
+        if (isResizing) {
+          isResizing = false;
+          resizer.classList.remove('resizing');
+        }
+      });
+    }
+
+    // 设置所有分屏调整器
+    function setupSplitResizers() {
+      // 为每个调整器设置事件
+      document.querySelectorAll('.split-resizer').forEach(resizer => {
+        const resizerId = parseInt(resizer.dataset.resizerId);
+        setupSplitResizer(resizer, resizerId, resizerId + 1);
+      });
+    }
+
+    // 添加分屏面板
+    function addSplitPanel() {
+      if (state.splitPanels.length >= state.maxSplitPanels) {
+        showNotification(`最多只能添加 ${state.maxSplitPanels} 个分屏`, 'warning');
+        return;
+      }
+      
+      const splitScreen = document.getElementById('splitScreen');
+      const newPanelId = state.splitPanels.length + 1;
+      
+      // 在最后一个面板前添加调整器
+      if (state.splitPanels.length > 0) {
+        const lastPanelId = state.splitPanels[state.splitPanels.length - 1].id;
+        const resizer = createSplitResizer(lastPanelId);
+        splitScreen.appendChild(resizer);
+        setupSplitResizer(resizer, lastPanelId, newPanelId);
+      }
+      
+      // 创建新面板
+      const allAIs = getAllAIs();
+      const selectedAIs = Array.from(state.selectedAIs);
+      let ai = null;
+      
+      if (newPanelId <= selectedAIs.length) {
+        ai = allAIs.find(a => a.id === selectedAIs[newPanelId-1]);
+      } else {
+        // 默认使用DeepSeek
+        ai = allAIs.find(a => a.id === 'deepseek');
+      }
+      
+      const panel = createSplitPanel(newPanelId, ai);
+      state.splitPanels.push(panel);
+      
+      // 更新添加按钮状态
+      updateAddSplitButton();
+      
+      // 重新设置调整器事件
+      setupSplitResizers();
+      
+      showNotification(`已添加第 ${newPanelId} 个分屏面板`, 'success');
+    }
+
+    // 移除分屏面板
+    function removeSplitPanel(panelId) {
+      if (state.splitPanels.length <= 1) {
+        showNotification('至少需要保留一个分屏面板', 'warning');
+        return;
+      }
+      
+      // 找到面板索引
+      const panelIndex = state.splitPanels.findIndex(p => p.id === panelId);
+      if (panelIndex === -1) return;
+      
+      // 移除面板
+      const panel = document.getElementById(`splitPanel${panelId}`);
+      if (panel) panel.remove();
+      
+      // 移除相关的调整器
+      const resizerBefore = document.getElementById(`splitResizer${panelId-1}`);
+      const resizerAfter = document.getElementById(`splitResizer${panelId}`);
+      
+      if (resizerBefore) resizerBefore.remove();
+      if (resizerAfter) resizerAfter.remove();
+      
+      // 从状态中移除
+      state.splitPanels.splice(panelIndex, 1);
+      
+      // 重新编号剩余的面板
+      renumberSplitPanels();
+      
+      // 更新添加按钮状态
+      updateAddSplitButton();
+      
+      showNotification(`已移除分屏面板 ${panelId}`, 'info');
+    }
+
+    // 重新编号分屏面板
+    function renumberSplitPanels() {
+      const splitScreen = document.getElementById('splitScreen');
+      splitScreen.innerHTML = '';
+      
+      // 重新创建所有面板和调整器
+      state.splitPanels.forEach((panel, index) => {
+        const newPanelId = index + 1;
+        panel.id = newPanelId;
+        
+        // 更新面板DOM
+        const panelElement = document.getElementById(`splitPanel${panel.id}`);
+        if (panelElement) {
+          panelElement.id = `splitPanel${newPanelId}`;
+          panelElement.querySelector('.split-ai-select').id = `splitAiSelect${newPanelId}`;
+          panelElement.querySelector('.split-ai-select').dataset.panelId = newPanelId;
+          panelElement.querySelectorAll('.split-control-btn').forEach(btn => {
+            btn.dataset.panel = newPanelId;
+          });
+          
+          const iframe = panelElement.querySelector('iframe');
+          if (iframe) {
+            iframe.id = `splitFrame${newPanelId}`;
+          }
+        }
+        
+        // 更新状态中的面板ID
+        panel.id = newPanelId;
+      });
+      
+      // 重新构建分屏布局
+      state.splitPanels.forEach((panel, index) => {
+        const newPanelId = index + 1;
+        const panelElement = document.getElementById(`splitPanel${newPanelId}`);
+        if (panelElement) {
+          splitScreen.appendChild(panelElement);
+          
+          // 在面板之间添加调整器（除了最后一个）
+          if (index < state.splitPanels.length - 1) {
+            const resizer = createSplitResizer(newPanelId);
+            splitScreen.appendChild(resizer);
+            setupSplitResizer(resizer, newPanelId, newPanelId + 1);
+          }
+        }
+      });
+      
+      // 重新设置调整器事件
+      setupSplitResizers();
+    }
+
+    // 交换分屏面板位置
+    function swapSplitPanel(panelId) {
+      const panelIndex = state.splitPanels.findIndex(p => p.id === panelId);
+      if (panelIndex === -1 || state.splitPanels.length <= 1) return;
+      
+      // 找到要交换的面板（与下一个面板交换）
+      const swapIndex = (panelIndex + 1) % state.splitPanels.length;
+      
+      // 交换状态
+      [state.splitPanels[panelIndex], state.splitPanels[swapIndex]] = 
+      [state.splitPanels[swapIndex], state.splitPanels[panelIndex]];
+      
+      // 重新编号并重建布局
+      renumberSplitPanels();
+      
+      showNotification(`已交换分屏面板位置`, 'info');
+    }
+
+    // 更新添加分屏按钮状态
+    function updateAddSplitButton() {
+      const addSplitBtn = document.getElementById('addSplitBtn');
+      if (state.splitPanels.length >= state.maxSplitPanels) {
+        addSplitBtn.disabled = true;
+        addSplitBtn.textContent = `已达到最大分屏数 (${state.maxSplitPanels})`;
+      } else {
+        addSplitBtn.disabled = false;
+        addSplitBtn.innerHTML = '<span>+</span> 添加分屏面板';
+      }
+    }
+
+    // 切换分屏模式
+    function toggleSplitScreen() {
+      state.isSplitScreen = !state.isSplitScreen;
+      
+      if (state.isSplitScreen) {
+        // 切换到分屏模式
+        document.getElementById('singleScreen').style.display = 'none';
+        document.getElementById('splitScreen').style.display = 'flex';
+        document.getElementById('addSplitContainer').style.display = 'flex';
+        
+        // 初始化分屏
+        initSplitScreen();
+        
+        // 调整布局
+        adjustSplitLayout();
+        
+        showNotification('分屏模式已开启，可拖拽调整面板大小', 'success');
+      } else {
+        // 切换回单屏模式
+        document.getElementById('singleScreen').style.display = 'block';
+        document.getElementById('splitScreen').style.display = 'none';
+        document.getElementById('addSplitContainer').style.display = 'none';
+        
+        // 清除分屏状态
+        state.splitPanels = [];
+        
+        showNotification('分屏模式已关闭', 'info');
+      }
+    }
+
+    // 调整分屏布局以适应屏幕大小
+    function adjustSplitLayout() {
+      const splitScreen = document.getElementById('splitScreen');
+      if (!splitScreen || !state.isSplitScreen) return;
+      
+      const panels = Array.from(splitScreen.querySelectorAll('.split-panel'));
+      const resizers = Array.from(splitScreen.querySelectorAll('.split-resizer'));
+      
+      if (window.innerWidth <= 900) {
+        // 小屏幕：垂直布局
+        splitScreen.style.flexDirection = 'column';
+        panels.forEach(p => {
+          p.style.width = '100% !important';
+          p.style.height = `${100 / panels.length}%`;
+          p.style.minWidth = '100%';
+        });
+        resizers.forEach(r => {
+          r.style.width = '100%';
+          r.style.height = '8px';
+          r.style.cursor = 'row-resize';
+        });
+      } else {
+        // 大屏幕：水平布局
+        splitScreen.style.flexDirection = 'row';
+        panels.forEach(p => {
+          p.style.width = `${100 / panels.length}%`;
+          p.style.height = '100%';
+          p.style.minWidth = '200px';
+        });
+        resizers.forEach(r => {
+          r.style.width = '8px';
+          r.style.height = '100%';
+          r.style.cursor = 'col-resize';
+        });
+      }
+    }
+
+    // 监听窗口大小变化
+    window.addEventListener('resize', () => {
+      if (state.isSplitScreen) {
+        adjustSplitLayout();
+      }
+    });
+
+    // 自动查询所有AI
+    function autoQueryAllAis() {
+      const question = document.getElementById('questionInput').value.trim();
+      
+      if (!question) {
+        showNotification('请输入问题内容', 'warning');
+        return;
+      }
+      
+      if (state.selectedAIs.size === 0) {
+        showNotification('请至少选择一个AI', 'warning');
+        return;
+      }
+      
+      const allAIs = getAllAIs();
+      const selectedAis = allAIs.filter(ai => state.selectedAIs.has(ai.id));
+      
+      // 如果在分屏模式中，将问题发送到每个分屏
+      if (state.isSplitScreen && state.splitPanels.length > 0) {
+        selectedAis.forEach((ai, index) => {
+          if (index < state.splitPanels.length) {
+            const panel = state.splitPanels[index];
+            openAiWebsite(ai.url, ai.name, panel.id);
+            
+            // 尝试发送问题
+            setTimeout(() => {
+              try {
+                const frame = document.getElementById(`splitFrame${panel.id}`);
+                if (frame && frame.contentWindow) {
+                  frame.contentWindow.postMessage({
+                    type: 'AI_QUESTION',
+                    question: question
+                  }, '*');
+                }
+              } catch (e) {
+                // 忽略错误
+              }
+            }, 1000);
+          }
+        });
+      } else {
+        // 在主窗口打开第一个AI
+        const firstAi = selectedAis[0];
+        openAiWebsite(firstAi.url, firstAi.name);
+        
+        // 在新标签页打开其他AI
+        for (let i = 1; i < selectedAis.length; i++) {
+          setTimeout(() => {
+            const win = window.open(selectedAis[i].url, `ai_query_${selectedAis[i].id}`);
+            
+            // 尝试发送问题（需要用户手动同意弹出窗口）
+            if (win) {
+              setTimeout(() => {
+                try {
+                  win.postMessage({
+                    type: 'AI_QUESTION',
+                    question: question
+                  }, '*');
+                } catch (e) {
+                  // 忽略错误
+                }
+              }, 1500);
+            }
+          }, i * 800);
+        }
+      }
+      
+      // 复制问题到剪贴板
+      copyToClipboard(question);
+      
+      showNotification(`已向 ${selectedAis.length} 个AI发送问题，问题已复制到剪贴板`, 'success');
+    }
+
+    // 比较AI答案
+    function compareAiAnswers() {
+      const question = document.getElementById('questionInput').value.trim();
+      
+      if (!question) {
+        showNotification('请输入问题内容', 'warning');
+        return;
+      }
+      
+      const allAIs = getAllAIs();
+      const selectedAis = allAIs.filter(ai => state.selectedAIs.has(ai.id));
+      
+      if (selectedAis.length < 2) {
+        showNotification('请至少选择2个AI进行比较', 'warning');
+        return;
+      }
+      
+      // 生成比较报告
+      let comparison = `# AI答案对比报告\n\n`;
+      comparison += `**问题:** ${question}\n\n`;
+      comparison += `**对比时间:** ${new Date().toLocaleString()}\n\n`;
+      comparison += `**参与对比的AI (${selectedAis.length}个):**\n`;
+      
+      selectedAis.forEach((ai, index) => {
+        comparison += `${index + 1}. ${ai.name} (${ai.category})\n`;
+      });
+      
+      comparison += `\n## 模拟回答对比\n\n`;
+      
+      // 为每个AI生成模拟回答
+      selectedAis.forEach((ai, index) => {
+        const responses = [
+          `根据我的分析，${question} 这个问题涉及多个方面...`,
+          `我认为这个问题的核心在于... ${ai.name} 的回答是基于最新的数据和模型训练。`,
+          `从${ai.category}的角度来看，这个问题可以这样理解...`,
+          `我的回答可能与其他AI有所不同，因为我的训练数据和算法有所区别...`
+        ];
+        
+        const response = responses[index % responses.length];
+        comparison += `### ${ai.icon} ${ai.name}\n`;
+        comparison += `**类别:** ${ai.category}\n\n`;
+        comparison += `${response}\n\n`;
+        comparison += `---\n\n`;
+      });
+      
+      comparison += `## 总结\n\n`;
+      comparison += `- 不同AI的回答侧重点不同\n`;
+      comparison += `- 通用AI通常提供更全面的回答\n`;
+      comparison += `- 专业AI在其领域内可能更精确\n`;
+      comparison += `- 建议综合多个AI的回答以获得更全面的理解\n`;
+      
+      // 保存到笔记
+      document.getElementById('noteTitle').value = `AI答案对比: ${question.substring(0, 20)}...`;
+      document.getElementById('noteContent').value = comparison;
+      
+      showNotification('AI答案对比报告已生成，请查看笔记区域', 'success');
+    }
+
+    // 模拟AI对话
+    function simulateAiChat() {
+      const question = document.getElementById('questionInput').value.trim();
+      
+      if (!question) {
+        showNotification('请输入问题内容', 'warning');
+        return;
+      }
+      
+      const allAIs = getAllAIs();
+      const selectedAis = allAIs.filter(ai => state.selectedAIs.has(ai.id));
+      
+      if (selectedAis.length < 2) {
+        showNotification('请至少选择2个AI进行对话', 'warning');
+        return;
+      }
+      
+      // 模拟AI对话
+      let conversation = `# AI对话模拟\n\n`;
+      conversation += `**话题:** ${question}\n\n`;
+      conversation += `**参与AI:** ${selectedAis.map(ai => ai.name).join(', ')}\n\n`;
+      conversation += `**对话开始:**\n\n`;
+      
+      // 每个AI轮流发言
+      const rounds = 3; // 对话轮数
+      for (let round = 0; round < rounds; round++) {
+        conversation += `### 第 ${round + 1} 轮\n\n`;
+        
+        selectedAis.forEach((ai, index) => {
+          const responses = [
+            `${ai.name}: 我认为这个问题的关键在于...`,
+            `${ai.name}: 我同意前一个观点，但我想补充一点...`,
+            `${ai.name}: 从另一个角度来看...`,
+            `${ai.name}: 根据我的训练数据，这个问题可以这样理解...`,
+            `${ai.name}: 我觉得我们还需要考虑...`
+          ];
+          
+          const responseIndex = (round * selectedAis.length + index) % responses.length;
+          conversation += `${ai.icon} ${responses[responseIndex]}\n\n`;
+        });
+      }
+      
+      conversation += `**对话结束**\n\n`;
+      conversation += `---\n对话模拟完成于 ${new Date().toLocaleString()}`;
+      
+      document.getElementById('noteTitle').value = `AI对话: ${question.substring(0, 20)}...`;
+      document.getElementById('noteContent').value = conversation;
+      
+      showNotification('AI对话已生成，请查看笔记区域', 'success');
+    }
+
+    // 运行代码
+    function runCode() {
+      const code = document.getElementById('codeEditor').value;
+      const language = document.getElementById('codeLanguage').value;
+      
+      if (!code.trim()) {
+        showNotification('请输入代码', 'warning');
+        return;
+      }
+      
+      let output = '';
+      
+      try {
+        // 简单的代码执行模拟
+        if (language === 'javascript') {
+          // 安全地执行JavaScript
+          const consoleLogs = [];
+          const originalLog = console.log;
+          console.log = (...args) => {
+            consoleLogs.push(args.join(' '));
+          };
+          
+          try {
+            // 使用Function构造函数创建安全执行环境
+            const func = new Function(code);
+            const result = func();
+            
+            if (result !== undefined) {
+              consoleLogs.push(`返回值: ${result}`);
+            }
+            
+            output = consoleLogs.join('\n') || '代码执行完成，无输出';
+          } catch (error) {
+            output = `错误: ${error.message}`;
+          } finally {
+            console.log = originalLog;
+          }
+        } else {
+          output = `语言 "${language}" 的代码执行模拟\n（在实际应用中，这里会调用相应的编译器/解释器）\n\n代码内容:\n${code}`;
+        }
+      } catch (error) {
+        output = `执行错误: ${error.message}`;
+      }
+      
+      document.getElementById('codeOutput').value = output;
+    }
+
+    // 更新任务列表
+    function updateTaskList() {
+      const taskList = document.getElementById('taskList');
+      
+      if (state.tasks.length === 0) {
+        taskList.innerHTML = `
+          <div style="text-align:center; padding:20px; color:var(--muted);">
+            <div style="font-size:24px; margin-bottom:8px;">✅</div>
+            <div>暂无任务</div>
+          </div>
+        `;
+        return;
+      }
+      
+      let html = '';
+      
+      state.tasks.forEach((task, index) => {
+        html += `
+          <div class="task-item">
+            <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} data-index="${index}">
+            <div class="task-text ${task.completed ? 'task-completed' : ''}">${escapeHtml(task.text)}</div>
+          </div>
+        `;
+      });
+      
+      taskList.innerHTML = html;
+      
+      // 添加复选框事件
+      taskList.querySelectorAll('.task-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          state.tasks[index].completed = e.target.checked;
+          saveData();
+        });
+      });
+    }
+
+    // 添加任务
+    function addTask() {
+      const taskInput = document.getElementById('newTaskInput');
+      const text = taskInput.value.trim();
+      
+      if (!text) {
+        showNotification('请输入任务内容', 'warning');
+        return;
+      }
+      
+      state.tasks.unshift({
+        text: text,
+        completed: false,
+        timestamp: new Date().toLocaleString()
+      });
+      
+      taskInput.value = '';
+      saveData();
+      updateTaskList();
+      showNotification('任务已添加', 'success');
+    }
+
+    // 清除已完成任务
+    function clearCompletedTasks() {
+      state.tasks = state.tasks.filter(task => !task.completed);
+      saveData();
+      updateTaskList();
+      showNotification('已清除已完成任务', 'info');
+    }
+
+    // 显示文本工具
+    function showTextTools() {
+      const text = document.getElementById('noteContent').value || document.getElementById('questionInput').value;
+      
+      if (!text) {
+        showNotification('请在笔记或问题框中输入文本', 'warning');
+        return;
+      }
+      
+      const charCount = text.length;
+      const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+      const lineCount = text.split('\n').length;
+      
+      const stats = `# 文本分析报告\n\n`;
+      stats += `**文本内容:**\n${text.substring(0, 200)}${text.length > 200 ? '...' : ''}\n\n`;
+      stats += `## 统计信息\n\n`;
+      stats += `- 字符数: ${charCount}\n`;
+      stats += `- 单词数: ${wordCount}\n`;
+      stats += `- 行数: ${lineCount}\n`;
+      stats += `- 段落数: ${text.split('\n\n').length}\n\n`;
+      
+      if (text.length > 50) {
+        const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+        const wordFreq = {};
+        words.forEach(word => {
+          wordFreq[word] = (wordFreq[word] || 0) + 1;
+        });
+        
+        const sortedWords = Object.entries(wordFreq)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10);
+        
+        if (sortedWords.length > 0) {
+          stats += `## 词频分析 (前10)\n\n`;
+          sortedWords.forEach(([word, count], index) => {
+            stats += `${index + 1}. "${word}": ${count}次\n`;
+          });
+        }
+      }
+      
+      document.getElementById('noteTitle').value = '文本分析报告';
+      document.getElementById('noteContent').value = stats;
+      
+      showNotification('文本分析报告已生成，请查看笔记区域', 'success');
+    }
+
+    // 显示快速计算器
+    function showQuickCalculator() {
+      const calculator = `# 快速计算器\n\n`;
+      calculator += `## 基本运算\n\n`;
+      calculator += `- 1 + 2 * 3 = ${1 + 2 * 3}\n`;
+      calculator += `- (1 + 2) * 3 = ${(1 + 2) * 3}\n`;
+      calculator += `- 10 / 2 = ${10 / 2}\n`;
+      calculator += `- 2的10次方 = ${Math.pow(2, 10)}\n`;
+      calculator += `- 平方根(16) = ${Math.sqrt(16)}\n\n`;
+      
+      calculator += `## 单位转换\n\n`;
+      calculator += `### 长度\n`;
+      calculator += `- 1 英里 = ${(1 * 1.609).toFixed(3)} 公里\n`;
+      calculator += `- 1 英尺 = ${(1 * 0.305).toFixed(3)} 米\n\n`;
+      
+      calculator += `### 重量\n`;
+      calculator += `- 1 千克 = ${(1 * 2.205).toFixed(3)} 磅\n`;
+      calculator += `- 1 磅 = ${(1 * 0.454).toFixed(3)} 千克\n\n`;
+      
+      calculator += `### 温度\n`;
+      calculator += `- 100°F = ${((100 - 32) * 5/9).toFixed(1)}°C\n`;
+      calculator += `- 0°C = ${(0 * 9/5 + 32).toFixed(1)}°F\n\n`;
+      
+      calculator += `## 其他计算\n\n`;
+      calculator += `- 当前时间戳: ${Date.now()}\n`;
+      calculator += `- 随机数: ${Math.random().toFixed(4)}\n`;
+      calculator += `- 圆周率π: ${Math.PI.toFixed(6)}\n`;
+      calculator += `- 自然常数e: ${Math.E.toFixed(6)}\n\n`;
+      
+      calculator += `---\n`;
+      calculator += `提示: 在JavaScript控制台中可以进行更复杂的计算\n`;
+      calculator += `例如: Math.sin(Math.PI/2) = ${Math.sin(Math.PI/2).toFixed(4)}`;
+      
+      document.getElementById('noteTitle').value = '快速计算器';
+      document.getElementById('noteContent').value = calculator;
+      
+      showNotification('计算器已生成，请查看笔记区域', 'success');
+    }
+
+    // 更新统计信息
+    function updateStats() {
+      const allAIs = getAllAIs();
+      document.getElementById('aiCount').textContent = allAIs.length;
+      document.getElementById('queryCount').textContent = state.queryCount;
+      document.getElementById('noteCount').textContent = state.notes.length;
+      
+      // 计算会话时间（分钟）
+      const now = new Date();
+      const diffMs = now - state.sessionStartTime;
+      const diffMins = Math.floor(diffMs / 60000);
+      document.getElementById('sessionTime').textContent = diffMins;
+    }
+
+    // 加载数据
+    function loadData() {
+      try {
+        const savedNotes = localStorage.getItem('aiNotes');
+        const savedChatHistory = localStorage.getItem('aiChatHistory');
+        const savedTasks = localStorage.getItem('aiTasks');
+        const savedQueryCount = localStorage.getItem('aiQueryCount');
+        const savedCustomAIs = localStorage.getItem('aiCustomAIs');
+        const savedSelectedAIs = localStorage.getItem('aiSelectedAIs');
+        
+        if (savedNotes) state.notes = JSON.parse(savedNotes);
+        if (savedChatHistory) state.chatHistory = JSON.parse(savedChatHistory);
+        if (savedTasks) state.tasks = JSON.parse(savedTasks);
+        if (savedQueryCount) state.queryCount = parseInt(savedQueryCount);
+        if (savedCustomAIs) state.customAIs = JSON.parse(savedCustomAIs);
+        if (savedSelectedAIs) state.selectedAIs = new Set(JSON.parse(savedSelectedAIs));
+      } catch (e) {
+        console.warn('无法从本地存储加载数据:', e);
+      }
+    }
+
+    // 保存数据
+    function saveData() {
+      try {
+        localStorage.setItem('aiNotes', JSON.stringify(state.notes));
+        localStorage.setItem('aiChatHistory', JSON.stringify(state.chatHistory));
+        localStorage.setItem('aiTasks', JSON.stringify(state.tasks));
+        localStorage.setItem('aiQueryCount', state.queryCount.toString());
+        localStorage.setItem('aiCustomAIs', JSON.stringify(state.customAIs));
+        localStorage.setItem('aiSelectedAIs', JSON.stringify(Array.from(state.selectedAIs)));
+      } catch (e) {
+        console.warn('无法保存数据到本地存储:', e);
+      }
+    }
+
+    // 返回主界面
+    function returnToMain() {
+      showNotification('正在返回主界面...', 'success');
+      const before = location.href;
+      if (window.history && window.history.length > 1) {
+        try {
+          history.back();
+        } catch (e) {
+          // ignore
+        }
+        setTimeout(() => {
+          if (location.href === before) {
+            location.href = 'index.html';
+          }
+        }, 400);
+      } else {
+        location.href = 'index.html';
+      }
+    }
+
+    // 显示/隐藏加载状态
+    function showLoading(show) {
+      document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+    }
+
+    // 显示通知
+    function showNotification(message, type = 'info') {
+      // 移除之前的通知
+      document.querySelectorAll('.notification').forEach(notification => {
+        notification.remove();
+      });
+      
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // 复制文本到剪贴板
+    function copyToClipboard(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand('copy');
+        showNotification('已复制到剪贴板', 'success');
+      } catch (e) {
+        console.warn('复制失败:', e);
+        showNotification('复制失败，请手动复制', 'warning');
+      }
+      
+      document.body.removeChild(textarea);
+    }
+
+    // 转义HTML特殊字符
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 初始化应用
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

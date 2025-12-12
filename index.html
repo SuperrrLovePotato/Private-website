@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人导航 · 学习与建模分支</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <style>
+      :root{
+        --bg1:#0f1724; --bg2:#0b1220; --accent:#5eead4; --muted:#9aa4b2;
+        --card:#0b1622; --glass: rgba(255,255,255,0.03);
+        --maxw:1100px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0;font-family:"Segoe UI",Roboto,Arial;color:#e6eef6;
+        background:linear-gradient(180deg,var(--bg1),var(--bg2));
+        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+        line-height:1.45;
+      }
+     /* 锁屏样式：输入秘钥 123 可进入主界面 */
+     #lockOverlay{
+       position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+       z-index:2200;background:radial-gradient(ellipse at 20% 20%, rgba(124,58,237,0.12), transparent 10%),
+                  radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.08), transparent 12%),
+                  linear-gradient(180deg, rgba(2,6,23,0.92), rgba(2,6,23,0.96));
+       backdrop-filter: blur(6px) saturate(1.1);
+       -webkit-backdrop-filter: blur(6px) saturate(1.1);
+       transition:opacity .4s ease, visibility .4s;
+     }
+     #lockOverlay.hidden{opacity:0;visibility:hidden;pointer-events:none}
+
+     .lock-scene{
+       width:min(760px,92%);padding:28px;border-radius:16px;position:relative;
+       background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+       border:1px solid rgba(124,58,237,0.12);
+       box-shadow:0 20px 60px rgba(2,6,23,0.7), 0 0 60px rgba(124,58,237,0.06) inset;
+       overflow:hidden;
+     }
+     /* 动态光晕与粒子 */
+     .lock-scene::before, .lock-scene::after{
+       content:'';position:absolute;inset:-30%;filter:blur(60px);opacity:.8;pointer-events:none;
+       transform:translateZ(0);
+     }
+     .lock-scene::before{background:radial-gradient(circle at 20% 10%, rgba(59,130,246,0.22), transparent 18%);}
+     .lock-scene::after{background:conic-gradient(from 90deg, rgba(139,92,246,0.12), rgba(59,130,246,0.06), rgba(16,185,129,0.06));mix-blend-mode:screen}
+
+     .lock-header{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+     .lock-mark{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:800;color:#021;font-size:20px;box-shadow:0 6px 30px rgba(124,58,237,0.18)}
+     .lock-title{font-size:20px;font-weight:800;color:#fff;margin:0}
+     /* 炫酷文字跳动 / 黑客风格 效果 */
+     .glitch{
+       position:relative;
+       color:#e6eef6;
+       font-family: "JetBrains Mono", "Source Code Pro", monospace;
+       letter-spacing:0.6px;
+       text-transform:none;
+       will-change:transform,opacity;
+     }
+     .glitch::before,.glitch::after{
+       content:attr(data-text);
+       position:absolute;left:0;top:0;
+       width:100%;overflow:hidden;
+       clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+       mix-blend-mode:screen;
+       pointer-events:none;
+     }
+     .glitch::before{color:rgba(124,58,237,0.9);transform:translate3d(-2px,-1px,0);opacity:0.9;filter:blur(.6px)}
+     .glitch::after{color:rgba(6,182,212,0.9);transform:translate3d(2px,1px,0);opacity:0.85;filter:blur(.8px)}
+     @keyframes glitchSlice {
+       0%{transform:translateY(0)}
+       20%{transform:translateY(-6px)}
+       40%{transform:translateY(6px)}
+       60%{transform:translateY(-4px)}
+       80%{transform:translateY(4px)}
+       100%{transform:translateY(0)}
+     }
+     .glitch.flicker::before{animation:glitchSlice 420ms linear infinite}
+     .glitch.flicker::after{animation:glitchSlice 520ms linear infinite reverse}
+     /* 文字抖动闪烁（主元素）*/
+     @keyframes neonPulse {
+       0%{text-shadow:0 0 0 rgba(124,58,237,0),0 0 0 rgba(6,182,212,0)}
+       50%{text-shadow:0 6px 34px rgba(124,58,237,0.18),0 2px 10px rgba(6,182,212,0.12)}
+       100%{text-shadow:0 0 0 rgba(124,58,237,0),0 0 0 rgba(6,182,212,0)}
+     }
+     .glitch.pulse{animation:neonPulse 2.6s ease-in-out infinite}
+     .lock-sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+     .lock-body{display:flex;flex-direction:column;gap:12px}
+     .unlock-input{
+       display:flex;gap:10px;align-items:center;
+     }
+     #unlockInput{
+       flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);background:rgba(0,0,0,0.45);color:#e6eef6;font-size:15px;
+       box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);
+     }
+     #unlockBtn{
+       padding:10px 14px;border-radius:12px;border:0;background:linear-gradient(90deg,#7c3aed,#06b6d4);color:#021;font-weight:700;cursor:pointer;
+       box-shadow:0 8px 26px rgba(59,130,246,0.14);
+     }
+     #rememberRow{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-top:6px}
+     #lockHint{color:rgba(255,255,255,0.7);font-size:13px}
+
+     .neon-line{
+       height:2px;border-radius:6px;margin-top:12px;background:linear-gradient(90deg, rgba(124,58,237,0.8), rgba(6,182,212,0.8));
+       box-shadow:0 6px 40px rgba(124,58,237,0.08),0 0 18px rgba(6,182,212,0.04) inset;
+     }
+
+     @keyframes floaty { 0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)} }
+     .lock-mark{animation:floaty 4.8s ease-in-out infinite}
+     @media (max-width:520px){ .lock-scene{padding:18px} .lock-mark{width:52px;height:52px;font-size:18px} }
+     /* end lock styles */
+
+      .wrap{max-width:var(--maxw);margin:0 auto;padding:28px}
+      header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+      .brand{display:flex;gap:12px;align-items:center}
+      .mark{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700;color:#021}
+      .title{font-weight:700}
+      nav{display:flex;gap:12px;align-items:center}
+      nav a{color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:8px;font-size:14px}
+      nav a.cta{background:linear-gradient(90deg,#06b6d4,#7c3aed);color:#021;font-weight:600}
+      .top-row{display:flex;gap:18px;align-items:center;margin-top:18px}
+      .search{flex:1;display:flex;align-items:center;gap:8px}
+      .search input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+      .branches{margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+      .branch{background:var(--card);padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:transform .12s,box-shadow .12s;display:flex;flex-direction:column;gap:8px}
+      .branch:focus{outline:2px solid rgba(94,234,212,0.12);outline-offset:3px}
+      .branch:hover{transform:translateY(-6px);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+      .branch h3{margin:0;font-size:16px}
+      .branch p{margin:0;color:var(--muted);font-size:13px}
+      .content{margin-top:26px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+      .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+      .btn{padding:10px 14px;border-radius:10px;text-decoration:none;font-weight:600;display:inline-block;position:relative;overflow:hidden;cursor:pointer;background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.04)}
+      .btn.primary{background:var(--accent);color:#00272b;border:0}
+      .grid-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
+      .card{background:var(--glass);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+      footer{margin-top:30px;color:var(--muted);font-size:13px;padding-bottom:18px}
+      /* ripple */
+      .ripple{position:absolute;inset:0;border-radius:inherit;pointer-events:none;overflow:hidden}
+      .ripple span{position:absolute;background:rgba(255,255,255,0.06);border-radius:50%;transform:scale(0);animation:ripple 600ms linear;opacity:0.95}
+      @keyframes ripple{to{transform:scale(4);opacity:0}}
+      #toast{position:fixed;right:20px;bottom:20px;background:rgba(2,6,23,0.9);color:#e6eef6;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-size:13px;display:none;z-index:1200}
+      @media (max-width:700px){header{flex-direction:column;align-items:flex-start}.top-row{flex-direction:column}.search{width:100%}}
+    </style>
+</head>
+<body>
+  <noscript style="display:block;padding:12px;background:#fff2cc;color:#442200;text-align:center">检测到未启用 JavaScript，部分功能将不可用。</noscript>
+
+  <div class="wrap" id="app">
+    <header>
+      <div class="brand" aria-hidden="false">
+        <div class="mark">ME</div>
+        <div>
+          <div class="title">个人导航</div>
+          <div style="font-size:13px;color:var(--muted)">学习与工具（分支化管理）</div>
+        </div>
+      </div>
+
+      <nav aria-label="主要导航">
+        <a href="index.html">首页</a>
+        <a href="#branches">分支</a>
+        <a href="English learning.html" target="_blank" rel="noopener noreferrer">English 学习</a>
+        <a href="Practical tool kit.html" target="_blank" rel="noopener noreferrer">实用工具</a>
+        <a href="AI tools.html" target="_blank" rel="noopener noreferrer">AI 工具集</a>
+        <a href="https://ieltscat.xdf.cn/practice/read" target="_blank" rel="noopener noreferrer" class="cta">雅思阅读</a>
+        <a href="https://qwerty.liumingye.cn/" target="_blank" rel="noopener noreferrer">Qwerty</a>
+        <a href="Modeling workspace.html" target="_blank" rel="noopener noreferrer">建模学习</a>
+       <button id="lockBtn" class="btn" title="锁定主界面" aria-label="锁定主界面">锁定</button>
+      </nav>
+    </header>
+    <!-- 锁屏覆盖层（Midjourney 风格视觉） -->
+    <div id="lockOverlay" role="dialog" aria-label="请输入秘钥以解锁">
+      <div class="lock-scene" role="document" aria-hidden="false">
+        <div class="lock-header">
+          <div class="lock-mark">MAX</div>
+          <div>
+            <!-- data-text 用于 ::before / ::after 复制文字实现位移色块效果 -->
+            <div class="lock-title glitch" data-text="请输入秘钥以打开主界面">请输入秘钥以打开主界面</div>
+            <div class="lock-sub">由Superrr爱吃土豆开发个人学习网站 <strong></strong></div>
+          </div>
+        </div>
+
+        <div class="lock-body">
+          <div class="unlock-input">
+            <input id="unlockInput" type="password" placeholder="输入秘钥（按 Shift+Enter 可记住此设备）" aria-label="秘钥输入框" />
+            <button id="unlockBtn" title="解锁">打开</button>
+          </div>
+          <div id="rememberRow"><input id="rememberChk" type="checkbox" /> 在此设备上记住（长期）</div>
+          <div class="neon-line" aria-hidden="true"></div>
+          <div id="lockHint">注：正确秘钥才能访问主界面。若多人使用，请妥善保管。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="top-row">
+      <div class="search" role="search" aria-label="站内搜索">
+        <input id="search" type="search" placeholder="搜索分支或链接（回车）" aria-label="搜索分支或链接">
+        <button id="clear" class="btn" title="清除" aria-label="清除搜索">清除</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="showAll" class="btn" title="显示所有分支" aria-label="显示所有分支">显示所有</button>
+        <button id="lastBranch" class="btn" title="打开上次使用的分支" aria-label="打开上次分支">上次分支</button>
+      </div>
+    </div>
+
+    <section id="branches" class="branches" aria-label="分支列表">
+      <div class="branch" data-branch="english" role="button" tabindex="0" aria-pressed="false">
+        <h3>学习英语</h3>
+        <p>雅思阅读、词汇与答题策略 — 快速入口</p>
+      </div>
+      <div class="branch" data-branch="modeling" role="button" tabindex="0" aria-pressed="false">
+        <h3>建模学习</h3>
+        <p>Modeling workspace（单独页面）</p>
+      </div>
+      <div class="branch" data-branch="dev" role="button" tabindex="0" aria-pressed="false">
+        <h3>开发工具</h3>
+        <p>代码片段、文档与常用站点</p>
+      </div>
+      <div class="branch" data-branch="resources" role="button" tabindex="0" aria-pressed="false">
+        <h3>资源聚合</h3>
+        <p>教程、练习与学习笔记</p>
+      </div>
+      <div class="branch" data-branch="about" role="button" tabindex="0" aria-pressed="false">
+        <h3>关于 / 设置</h3>
+        <p>管理书签、偏好与站点配置</p>
+      </div>
+    </section>
+
+    <main id="panel" class="content" aria-live="polite">
+      <h2 id="panel-title">欢迎</h2>
+      <p id="panel-desc" style="color:var(--muted)">点击左侧分支查看内容。英语分支包含雅思阅读与 Qwerty 快捷入口，建模学习会在新窗口打开 Modeling workspace 页面。</p>
+
+      <div class="controls" id="panel-controls" aria-hidden="true"></div>
+      <div class="grid-links" id="panel-links" aria-hidden="true"></div>
+    </main>
+
+    <footer>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:600">个人导航</div>
+          <div style="color:var(--muted);font-size:13px">分支化管理常用站点</div>
+        </div>
+        <div style="color:var(--muted);font-size:13px">© 2025 个人导航</div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function(){
+      /* 锁屏逻辑（秘钥：123） */
+      const SECRET_KEY = '123';
+      const UNLOCK_STORAGE_KEY = 'site_unlocked_v2';
+      const lockOverlay = document.getElementById('lockOverlay');
+      const unlockInput = document.getElementById('unlockInput');
+      const unlockBtn = document.getElementById('unlockBtn');
+      const rememberChk = document.getElementById('rememberChk');
+      const lockBtn = document.getElementById('lockBtn');
+
+      function isUnlocked(){
+        try{
+          return sessionStorage.getItem(UNLOCK_STORAGE_KEY) === SECRET_KEY || localStorage.getItem(UNLOCK_STORAGE_KEY) === SECRET_KEY;
+        }catch(e){ return false; }
+      }
+      function showLock(){ lockOverlay && lockOverlay.classList.remove('hidden'); unlockInput && unlockInput.focus(); }
+      function hideLock(){ lockOverlay && lockOverlay.classList.add('hidden'); }
+
+      function tryUnlock(savePersistent=false){
+        const v = (unlockInput?.value||'').trim();
+        if(v === SECRET_KEY){
+          try{ sessionStorage.setItem(UNLOCK_STORAGE_KEY, SECRET_KEY); if(savePersistent) localStorage.setItem(UNLOCK_STORAGE_KEY, SECRET_KEY); }catch(e){}
+          hideLock(); window.setTimeout(()=> showToast && showToast('解锁成功'), 120);
+        } else {
+          showToast && showToast('秘钥错误');
+          if(unlockInput) unlockInput.value = '';
+          unlockInput && unlockInput.focus();
+          unlockInput && (unlockInput.animate ? unlockInput.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:280}) : null);
+        }
+      }
+
+      // 初始化
+      try{ if(!isUnlocked()) showLock(); else hideLock(); }catch(e){ showLock(); }
+
+      // 事件处理
+      unlockBtn?.addEventListener('click', ()=> tryUnlock(rememberChk?.checked));
+      unlockInput?.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') tryUnlock(e.shiftKey || rememberChk?.checked); });
+      lockBtn?.addEventListener('click', ()=> { try{ sessionStorage.removeItem(UNLOCK_STORAGE_KEY); localStorage.removeItem(UNLOCK_STORAGE_KEY);}catch(e){} showLock(); showToast && showToast('已锁定'); });
+
+      // 炫酷文字随机抖动与字符闪烁（轻量实现）
+      (function initGlitchEffect(){
+        const title = document.querySelector('.lock-title.glitch');
+        if(!title) return;
+        // 周期性触发伪元素位移效果
+        setInterval(()=> {
+          title.classList.toggle('flicker');
+          // 随机短暂高亮脉冲
+          title.classList.add('pulse');
+          setTimeout(()=> title.classList.remove('pulse'), 900);
+          // 小概率触发更强的“打字/乱序”效果
+          if(Math.random() < 0.18){
+            scrambleText(title, 120 + Math.random()*380);
+          }
+        }, 1200 + Math.random()*1000);
+      })();
+
+      // 简单字符乱序闪烁（非破坏原文）
+      function scrambleText(el, duration=300){
+        const original = el.getAttribute('data-text') || el.textContent;
+        const chars = '!@#$%^&*()_+-=[]{}<>?/.,;:';
+        let start = Date.now();
+        const timer = setInterval(()=>{
+          const now = Date.now();
+          if(now - start > duration){
+            el.textContent = original;
+            clearInterval(timer);
+            return;
+          }
+          // 随机替换部分字符以制造“黑客风格”闪烁
+          const arr = original.split('');
+          for(let i=0;i<Math.min(arr.length, Math.ceil(Math.random()*6)); i++){
+            const idx = Math.floor(Math.random()*arr.length);
+            arr[idx] = chars.charAt(Math.floor(Math.random()*chars.length));
+          }
+          el.textContent = arr.join('');
+        }, 40);
+      }
+
+      // 可按 Esc 键显示锁屏（增强 UX）
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') showLock(); });
+      // 点击覆盖层空白区也聚焦输入
+      lockOverlay?.addEventListener('click', (e)=>{ if(e.target === lockOverlay) unlockInput && unlockInput.focus(); });
+
+      // 允许外部脚本调用解锁（可选）
+      window.__trySiteUnlock = tryUnlock;
+      /* 锁屏逻辑结束 */
+
+      const branches = Array.from(document.querySelectorAll('.branch'));
+      const panelTitle = document.getElementById('panel-title');
+      const panelDesc = document.getElementById('panel-desc');
+      const panelControls = document.getElementById('panel-controls');
+      const panelLinks = document.getElementById('panel-links');
+      const toast = document.getElementById('toast');
+      const LS_KEY = 'my_nav_last_branch';
+
+      function showToast(text, t=2500){
+        toast.textContent = text; toast.style.display='block';
+        clearTimeout(toast._t); toast._t = setTimeout(()=> toast.style.display='none', t);
+      }
+
+      const CONTENT = {
+        english: {
+          title: '学习英语 · 雅思阅读',
+          desc: '汇集雅思阅读练习、词汇与答题策略。',
+          controls: [
+            { text:'打开 English learning', href:'English learning.html', primary:true },
+            { text:'打开 雅思阅读', href:'external/ielts.html' },
+            { text:'打开 Qwerty', href:'https://qwerty.liumingye.cn/' }
+          ],
+          links: [
+            {title:'今日任务',desc:'短篇阅读 + 词汇回顾', href:'#'},
+            {title:'词汇锦囊',desc:'高频词 & 例句', href:'#'}
+          ]
+        },
+        modeling: {
+          title:'建模学习 · Modeling workspace',
+          desc:'在新窗口打开本地 Modeling workspace 页面进行建模练习。',
+          controls: [
+            { text:'打开 Modeling workspace', href:'Modeling workspace.html', primary:true },
+            { text:'返回分支', href:'#branches' }
+          ],
+          links:[
+            {title:'说明',desc:'Modeling workspace 页面位于同目录', href:'Modeling workspace.html'},
+            {title:'路径',desc:'Modeling workspace.html', href:'Modeling workspace.html'}
+          ]
+        },
+        dev: {
+          title:'开发工具',
+          desc:'常用文档与在线工具。',
+          controls:[ { text:'代码片段', href:'#' } ],
+          
+          links:[]
+        },
+        resources: {
+          title:'资源聚合',
+          desc:'教程、博客与练习合集。',
+          controls:[], links:[]
+        },
+        about: {
+          title:'关于 / 设置',
+          desc:'管理书签、设置与个人信息。',
+          controls:[], links:[]
+        }
+      };
+
+      branches.forEach(b=>{
+        b.addEventListener('keydown', e=>{
+          if(e.key==='Enter' || e.key===' '){ e.preventDefault(); b.click(); }
+        });
+        b.addEventListener('click', ()=> openBranch(b.dataset.branch));
+      });
+
+      function openBranch(name){
+        const data = CONTENT[name] || CONTENT.english;
+        panelTitle.textContent = data.title;
+        panelDesc.textContent = data.desc;
+        panelControls.innerHTML = '';
+        panelLinks.innerHTML = '';
+        panelControls.setAttribute('aria-hidden','false');
+        panelLinks.setAttribute('aria-hidden','false');
+
+        data.controls.forEach(c=>{
+          const a = document.createElement('a');
+          a.className = 'btn' + (c.primary ? ' primary' : '');
+          a.href = c.href || '#';
+          a.textContent = c.text;
+          a.setAttribute('role','button');
+          a.addEventListener('pointerdown', e=> ripple(e,a));
+          a.addEventListener('click', handleLinkClick);
+          panelControls.appendChild(a);
+        });
+
+        data.links.forEach(l=>{
+          const d = document.createElement('div'); d.className='card';
+          d.innerHTML = '<strong>'+l.title+'</strong><div style="color:var(--muted);font-size:13px;margin-top:6px">'+l.desc+'</div>';
+          if(l.href){
+            d.addEventListener('click', ()=> { openHref(l.href); });
+            d.tabIndex = 0;
+            d.setAttribute('role','link');
+            d.addEventListener('keydown', e=> { if(e.key==='Enter') openHref(l.href); });
+          }
+          panelLinks.appendChild(d);
+        });
+
+        branches.forEach(b=> b.setAttribute('aria-pressed','false'));
+        const active = branches.find(b=> b.dataset.branch===name);
+        if(active) active.setAttribute('aria-pressed','true');
+        try{ localStorage.setItem(LS_KEY, name); }catch(e){}
+      }
+
+      function handleLinkClick(e){
+        const href = this.getAttribute('href');
+        if(!href) return;
+        if(href.startsWith('http') || href.endsWith('.html') || href.startsWith('external/')){
+          e.preventDefault();
+          openHref(href);
+        } else if(href.startsWith('#')){
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if(target) target.scrollIntoView({behavior:'smooth'});
+        }
+      }
+
+      function openHref(href){
+        try{
+          const newWin = window.open(href, '_blank', 'noopener,noreferrer');
+          if(newWin) showToast('已在新窗口打开：' + href);
+          else showToast('已尝试打开：' + href);
+        }catch(e){ showToast('请手动打开：' + href); }
+      }
+
+      function ripple(e, el){
+        let wrap = el.querySelector('.ripple'); if(!wrap){ wrap = document.createElement('div'); wrap.className='ripple'; el.appendChild(wrap); }
+        const rect = el.getBoundingClientRect();
+        const span = document.createElement('span');
+        const size = Math.max(rect.width, rect.height);
+        span.style.width = span.style.height = size + 'px';
+        span.style.left = (e.clientX - rect.left - size/2) + 'px';
+        span.style.top = (e.clientY - rect.top - size/2) + 'px';
+        wrap.appendChild(span);
+        setTimeout(()=> span.remove(), 700);
+      }
+
+      const search = document.getElementById('search');
+      const clear = document.getElementById('clear');
+      search.addEventListener('keydown', e=>{
+        if(e.key==='Enter') applySearch(search.value.trim().toLowerCase());
+      });
+      clear.addEventListener('click', ()=> { search.value=''; applySearch(''); });
+
+      function applySearch(q){
+        branches.forEach(b=>{
+          const txt = (b.textContent||'').toLowerCase();
+          b.style.display = q ? (txt.includes(q) ? '' : 'none') : '';
+        });
+      }
+
+      document.getElementById('showAll').addEventListener('click', ()=> { applySearch(''); showToast('显示所有分支'); });
+      document.getElementById('lastBranch').addEventListener('click', ()=>{
+        try{
+          const last = localStorage.getItem(LS_KEY) || 'english';
+          openBranch(last);
+          showToast('打开上次分支：' + last);
+        }catch(e){ showToast('没有可用的上次分支'); }
+      });
+
+      try{
+        const last = localStorage.getItem(LS_KEY);
+        openBranch(last || 'english');
+      }catch(e){ openBranch('english'); }
+
+      document.querySelectorAll('nav a[target="_blank"]').forEach(a=>{
+        a.addEventListener('click', ()=> setTimeout(()=> showToast('已在新窗口打开：' + a.getAttribute('href')), 50));
+      });
+
+    })();
+  </script>
+</body>
+</html>

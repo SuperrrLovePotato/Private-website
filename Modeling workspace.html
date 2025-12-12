@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>3D模型资源搜索平台</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --primary-dark: #1d4ed8;
+      --secondary: #8b5cf6;
+      --accent: #06b6d4;
+      --dark-bg: #0f172a;
+      --dark-card: #1e293b;
+      --dark-border: #334155;
+      --dark-text: #f1f5f9;
+      --dark-muted: #94a3b8;
+      --light-bg: #f8fafc;
+      --light-card: #ffffff;
+      --light-border: #e2e8f0;
+      --light-text: #0f172a;
+      --light-muted: #64748b;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+      --shadow-dark: 0 20px 60px rgba(0, 0, 0, 0.4);
+      --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --gradient-primary: linear-gradient(135deg, var(--primary), var(--secondary));
+    }
+    
+    /* 白天模式 */
+    body.light-mode {
+      --bg: var(--light-bg);
+      --card: var(--light-card);
+      --border: var(--light-border);
+      --text: var(--light-text);
+      --muted: var(--light-muted);
+      --shadow: var(--shadow);
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      color: var(--light-text);
+    }
+    
+    /* 黑夜模式 */
+    body.dark-mode {
+      --bg: var(--dark-bg);
+      --card: var(--dark-card);
+      --border: var(--dark-border);
+      --text: var(--dark-text);
+      --muted: var(--dark-muted);
+      --shadow: var(--shadow-dark);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: var(--dark-text);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background-color 0.5s, color 0.5s;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    
+    /* 顶部导航栏 - 高级感设计 */
+    .top-nav {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    body.light-mode .top-nav {
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .nav-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+    }
+    
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+    
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+    
+    .back-btn:hover {
+      transform: translateX(-5px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+    
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    /* 高级主题切换 */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 6px;
+      backdrop-filter: blur(10px);
+    }
+    
+    body.light-mode .theme-toggle {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .theme-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 16px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .theme-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: -1;
+    }
+    
+    .theme-btn.active {
+      color: white;
+    }
+    
+    .theme-btn.active::before {
+      opacity: 1;
+    }
+    
+    /* 头部区域 */
+    .header {
+      padding: 60px 0 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      background: var(--gradient-primary);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 28px;
+      color: white;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+      transform: rotate(-5deg);
+      transition: var(--transition);
+    }
+    
+    .logo-icon:hover {
+      transform: rotate(0deg) scale(1.05);
+    }
+    
+    .logo-text {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+    
+    /* 主搜索区域 - 高级感设计 */
+    .main-search {
+      flex: 1;
+      max-width: 900px;
+    }
+    
+    .search-box {
+      position: relative;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 20px 60px 20px 24px;
+      background: var(--card);
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 500;
+      transition: var(--transition);
+      box-shadow: var(--shadow);
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 10px 40px rgba(37, 99, 235, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .search-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: 10px;
+      width: 48px;
+      height: 48px;
+      color: white;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+    
+    .search-btn:hover {
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 6px 25px rgba(37, 99, 235, 0.4);
+    }
+    
+    /* 过滤标签 - 高级感设计 */
+    .filter-tags {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .filter-tag {
+      padding: 10px 20px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 50px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .filter-tag::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: -1;
+    }
+    
+    .filter-tag:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+    }
+    
+    .filter-tag.active {
+      color: white;
+      border-color: transparent;
+    }
+    
+    .filter-tag.active::before {
+      opacity: 1;
+    }
+    
+    /* 内容区域 */
+    .content-area {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 40px;
+      padding: 40px 0 80px;
+      min-height: calc(100vh - 300px);
+    }
+    
+    /* 高级侧边栏 */
+    .sidebar {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 30px;
+      border: 1px solid var(--border);
+      height: fit-content;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 120px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .sidebar-section {
+      margin-bottom: 40px;
+      position: relative;
+    }
+    
+    .sidebar-section::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+      opacity: 0.3;
+    }
+    
+    .sidebar-section:last-child::after {
+      display: none;
+    }
+    
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 搜索平台选择 - 高级感 */
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    
+    .platform-item {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .platform-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: -1;
+    }
+    
+    .platform-item:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .platform-item.active {
+      color: white;
+      border-color: transparent;
+    }
+    
+    .platform-item.active::before {
+      opacity: 1;
+    }
+    
+    .platform-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+      display: block;
+      transition: transform 0.3s;
+    }
+    
+    .platform-item:hover .platform-icon {
+      transform: scale(1.2);
+    }
+    
+    .platform-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    
+    /* 主内容区 - 采用上一个版本的图片展示风格 */
+    .main-content {
+      min-height: 800px;
+    }
+    
+    /* 搜索结果头部 */
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    
+    .results-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100px;
+      height: 2px;
+      background: var(--gradient-primary);
+    }
+    
+    .results-count {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 500;
+    }
+    
+    /* 高级排序按钮 */
+    .sort-options {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .sort-btn {
+      padding: 12px 24px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .sort-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: -1;
+    }
+    
+    .sort-btn:hover {
+      transform: translateY(-3px);
+      border-color: var(--primary);
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+    }
+    
+    .sort-btn.active {
+      color: white;
+      border-color: transparent;
+    }
+    
+    .sort-btn.active::before {
+      opacity: 1;
+    }
+    
+    /* 高级图片网格 - 上一个版本的精髓 */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 30px;
+    }
+    
+    /* 高级图片卡片设计 */
+    .image-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: var(--transition);
+      cursor: pointer;
+      position: relative;
+      box-shadow: var(--shadow);
+    }
+    
+    .image-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.9));
+      opacity: 0.8;
+      z-index: 1;
+    }
+    
+    .image-card:hover {
+      transform: translateY(-10px) scale(1.02);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+    }
+    
+    .image-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      overflow: hidden;
+    }
+    
+    .image-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .image-card:hover .image-preview {
+      transform: scale(1.1);
+    }
+    
+    /* 图片覆盖层设计 */
+    .image-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      z-index: 2;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 0, 0, 0.2) 30%,
+        rgba(0, 0, 0, 0.8) 100%
+      );
+    }
+    
+    .image-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: var(--gradient-primary);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      z-index: 3;
+    }
+    
+    .image-info {
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.4s ease;
+    }
+    
+    .image-card:hover .image-info {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .image-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: white;
+      line-height: 1.3;
+    }
+    
+    .image-desc {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 20px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .image-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .image-source {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .source-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--gradient-primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .source-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .image-stats {
+      display: flex;
+      gap: 15px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+    }
+    
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    /* 加载更多按钮 */
+    .load-more {
+      text-align: center;
+      margin: 60px 0;
+    }
+    
+    .load-more-btn {
+      padding: 18px 50px;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .load-more-btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(37, 99, 235, 0.4);
+    }
+    
+    /* 高级模态框 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      backdrop-filter: blur(20px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: var(--card);
+      border-radius: 24px;
+      max-width: 1400px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+      animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+    }
+    
+    .modal-close:hover {
+      background: rgba(0,0,0,0.8);
+      transform: rotate(90deg);
+    }
+    
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      height: calc(90vh - 60px);
+    }
+    
+    .modal-image {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .modal-image::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.1), transparent 50%);
+    }
+    
+    .modal-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-info {
+      padding: 50px;
+      overflow-y: auto;
+      background: var(--card);
+      position: relative;
+    }
+    
+    .modal-info::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, var(--primary), transparent);
+    }
+    
+    .modal-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 20px;
+      color: var(--text);
+      line-height: 1.2;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .modal-desc {
+      color: var(--muted);
+      margin-bottom: 40px;
+      line-height: 1.8;
+      font-size: 16px;
+    }
+    
+    .modal-meta {
+      margin-bottom: 40px;
+      padding: 30px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    
+    .meta-label {
+      color: var(--muted);
+      min-width: 100px;
+      font-weight: 500;
+    }
+    
+    .meta-value {
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gradient-primary);
+      color: white;
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 40px;
+    }
+    
+    .action-btn {
+      padding: 18px;
+      background: var(--gradient-primary);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+    }
+    
+    .action-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(37, 99, 235, 0.4);
+    }
+    
+    .action-btn.secondary {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text);
+      box-shadow: none;
+    }
+    
+    .action-btn.secondary:hover {
+      border-color: var(--primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+    
+    /* 加载指示器 */
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 100px;
+    }
+    
+    .loader.active {
+      display: block;
+    }
+    
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 30px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 1200px) {
+      .content-area {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        position: static;
+        margin-bottom: 40px;
+      }
+      
+      .modal-body {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-height: 80vh;
+      }
+      
+      .modal-image {
+        max-height: 50vh;
+        padding: 40px;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 16px;
+      }
+      
+      .nav-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .nav-left, .nav-right {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: 30px;
+      }
+      
+      .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+      }
+      
+      .results-header {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .sort-options {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+      
+      .modal-overlay {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <!-- 顶部导航栏 -->
+  <nav class="top-nav">
+    <div class="container">
+      <div class="nav-content">
+        <div class="nav-left">
+          <a href="index.html" class="back-btn">
+            <span>←</span>
+            返回导航
+          </a>
+        </div>
+        
+        <div class="nav-right">
+          <div class="theme-toggle">
+            <button class="theme-btn active" id="darkBtn">
+              <span>🌙</span>
+              黑夜模式
+            </button>
+            <button class="theme-btn" id="lightBtn">
+              <span>☀️</span>
+              白天模式
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 头部 -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">3D</div>
+          <div class="logo-text">3D模型资源搜索</div>
+        </div>
+        
+        <div class="main-search">
+          <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索3D模型、角色、场景、材质..." autocomplete="off">
+            <button class="search-btn" id="searchBtn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="filter-tags">
+            <div class="filter-tag active" data-filter="all">全部</div>
+            <div class="filter-tag" data-filter="character">角色</div>
+            <div class="filter-tag" data-filter="environment">场景</div>
+            <div class="filter-tag" data-filter="vehicle">载具</div>
+            <div class="filter-tag" data-filter="architecture">建筑</div>
+            <div class="filter-tag" data-filter="weapon">武器</div>
+            <div class="filter-tag" data-filter="furniture">家具</div>
+            <div class="filter-tag" data-filter="nature">自然</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容 -->
+  <main class="container content-area">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="section-title">🔍 搜索平台</div>
+        <div class="platform-grid">
+          <div class="platform-item active" data-platform="surfcg">
+            <span class="platform-icon">🌊</span>
+            <span class="platform-name">SurfCG</span>
+          </div>
+          <div class="platform-item" data-platform="sketchfab">
+            <span class="platform-icon">🎯</span>
+            <span class="platform-name">Sketchfab</span>
+          </div>
+          <div class="platform-item" data-platform="cgtrader">
+            <span class="platform-icon">💰</span>
+            <span class="platform-name">CGTrader</span>
+          </div>
+          <div class="platform-item" data-platform="turbosquid">
+            <span class="platform-icon">🐙</span>
+            <span class="platform-name">TurboSquid</span>
+          </div>
+          <div class="platform-item" data-platform="free3d">
+            <span class="platform-icon">🎁</span>
+            <span class="platform-name">Free3D</span>
+          </div>
+          <div class="platform-item" data-platform="all">全部平台</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">📁 模型类型</div>
+        <div class="type-list">
+          <div class="type-item active" data-type="all">
+            <span>📦</span>
+            <span>全部类型</span>
+          </div>
+          <div class="type-item" data-type="highpoly">
+            <span>✨</span>
+            <span>高多边形</span>
+          </div>
+          <div class="type-item" data-type="lowpoly">
+            <span>🔺</span>
+            <span>低多边形</span>
+          </div>
+          <div class="type-item" data-type="rigged">
+            <span>🦴</span>
+            <span>骨骼绑定</span>
+          </div>
+          <div class="type-item" data-type="animated">
+            <span>🎬</span>
+            <span>带动画</span>
+          </div>
+          <div class="type-item" data-type="pbr">
+            <span>🎨</span>
+            <span>PBR材质</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">🔥 热门搜索</div>
+        <div class="trending-list">
+          <div class="trending-item" data-query="科幻机甲">
+            <div class="trending-rank">1</div>
+            <div>科幻机甲</div>
+          </div>
+          <div class="trending-item" data-query="游戏角色">
+            <div class="trending-rank">2</div>
+            <div>游戏角色</div>
+          </div>
+          <div class="trending-item" data-query="现代建筑">
+            <div class="trending-rank">3</div>
+            <div>现代建筑</div>
+          </div>
+          <div class="trending-item" data-query="概念设计">
+            <div class="trending-rank">4</div>
+            <div>概念设计</div>
+          </div>
+          <div class="trending-item" data-query="动画角色">
+            <div class="trending-rank">5</div>
+            <div>动画角色</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <div class="results-header">
+        <div>
+          <h2 style="font-size: 32px; margin-bottom: 12px; font-weight: 800; color: var(--text);">精选3D模型示例</h2>
+          <div class="results-count" id="resultsCount">显示 12 个高质量结果</div>
+        </div>
+        
+        <div class="sort-options">
+          <button class="sort-btn active" data-sort="relevance">相关度</button>
+          <button class="sort-btn" data-sort="popular">受欢迎度</button>
+          <button class="sort-btn" data-sort="newest">最新发布</button>
+          <button class="sort-btn" data-sort="quality">质量评分</button>
+        </div>
+      </div>
+
+      <!-- 加载指示器 -->
+      <div class="loader" id="searchLoader">
+        <div class="spinner"></div>
+        <div style="color: var(--muted); margin-top: 20px; font-size: 16px;">正在搜索最佳资源...</div>
+      </div>
+
+      <!-- 图片网格 -->
+      <div class="image-grid" id="imageGrid">
+        <!-- 图片卡片将通过JS动态生成 -->
+      </div>
+
+      <!-- 加载更多 -->
+      <div class="load-more">
+        <button class="load-more-btn" id="loadMoreBtn">加载更多优质资源</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 详情模态框 -->
+  <div class="modal-overlay" id="imageModal">
+    <div class="modal-content">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-body" id="modalBody">
+        <!-- 模态框内容将通过JS动态生成 -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 3D模型资源数据
+    const modelResources = [
+      {
+        id: 1,
+        title: "未来战士机甲",
+        description: "高度详细的科幻机甲角色模型，包含完整的PBR材质和纹理贴图，适用于游戏开发和影视渲染。",
+        type: "character",
+        subtype: "highpoly",
+        platform: "surfcg",
+        image: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=1200&h=800&fit=crop",
+        views: 12500,
+        likes: 842,
+        quality: 9.2,
+        author: "CyberArt Studio",
+        tags: ["机甲", "科幻", "PBR材质", "高模"],
+        date: "2024-01-15",
+        url: "https://www.surfcg.com/model/future-warrior-mecha"
+      },
+      {
+        id: 2,
+        title: "太空战机模型",
+        description: "低多边形太空战机模型，包含LOD级别和UV贴图，适用于移动端游戏开发。",
+        type: "vehicle",
+        subtype: "lowpoly",
+        platform: "sketchfab",
+        image: "https://images.unsplash.com/photo-1536152471326-642d7bb5e4c1?w=1200&h=800&fit=crop",
+        views: 8560,
+        likes: 523,
+        quality: 8.5,
+        author: "SpaceCraft Models",
+        tags: ["太空", "战机", "低模", "游戏模型"],
+        date: "2024-02-20",
+        url: "https://sketchfab.com/models/space-fighter"
+      },
+      {
+        id: 3,
+        title: "概念科幻建筑",
+        description: "未来主义建筑概念设计，包含完整的环境设置和灯光预设，适合概念艺术参考。",
+        type: "architecture",
+        subtype: "highpoly",
+        platform: "cgtrader",
+        image: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?w=1200&h=800&fit=crop",
+        views: 23400,
+        likes: 1256,
+        quality: 9.5,
+        author: "Concept Design Lab",
+        tags: ["建筑", "概念设计", "未来主义", "环境"],
+        date: "2024-01-05",
+        url: "https://www.cgtrader.com/3d-models/architecture/concept-futuristic-building"
+      },
+      {
+        id: 4,
+        title: "游戏角色 - 兽人战士",
+        description: "完整的游戏角色模型，包含骨骼绑定、基础动画和PBR材质，适用于Unity和Unreal引擎。",
+        type: "character",
+        subtype: "rigged",
+        platform: "turbosquid",
+        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&h=800&fit=crop",
+        views: 18700,
+        likes: 934,
+        quality: 8.8,
+        author: "GameDev Assets",
+        tags: ["角色", "兽人", "骨骼绑定", "游戏开发"],
+        date: "2024-02-10",
+        url: "https://www.turbosquid.com/3d-models/orc-warrior-character"
+      },
+      {
+        id: 5,
+        title: "自然环境场景",
+        description: "高质量自然环境场景，包含树木、岩石、草地等元素，适用于影视级渲染。",
+        type: "nature",
+        subtype: "highpoly",
+        platform: "free3d",
+        image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=800&fit=crop",
+        views: 15200,
+        likes: 756,
+        quality: 8.7,
+        author: "Nature Assets",
+        tags: ["自然", "场景", "环境", "影视级"],
+        date: "2024-01-25",
+        url: "https://free3d.com/3d-model/nature-environment-scene"
+      },
+      {
+        id: 6,
+        title: "现代武器套组",
+        description: "高精度现代武器模型套组，包含手枪、步枪、狙击枪等多种武器，附带PBR材质。",
+        type: "weapon",
+        subtype: "highpoly",
+        platform: "surfcg",
+        image: "https://images.unsplash.com/photo-1595263182392-7c2c0b1b5b2e?w=1200&h=800&fit=crop",
+        views: 19800,
+        likes: 1023,
+        quality: 9.0,
+        author: "Weapon Master",
+        tags: ["武器", "枪械", "高精度", "PBR材质"],
+        date: "2024-02-05",
+        url: "https://www.surfcg.com/model/modern-weapon-pack"
+      },
+      {
+        id: 7,
+        title: "概念载具设计",
+        description: "未来概念载具设计模型，包含详细的内部结构和外部设计，适合概念艺术家参考。",
+        type: "vehicle",
+        subtype: "highpoly",
+        platform: "sketchfab",
+        image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=1200&h=800&fit=crop",
+        views: 11200,
+        likes: 634,
+        quality: 8.9,
+        author: "Vehicle Concepts",
+        tags: ["载具", "概念", "未来设计", "详细"],
+        date: "2024-02-15",
+        url: "https://sketchfab.com/models/concept-vehicle-design"
+      },
+      {
+        id: 8,
+        title: "中世纪城堡",
+        description: "完整的中世纪城堡模型，包含建筑细节、纹理贴图和环境设置，适用于游戏场景。",
+        type: "architecture",
+        subtype: "highpoly",
+        platform: "cgtrader",
+        image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=1200&h=800&fit=crop",
+        views: 24500,
+        likes: 1345,
+        quality: 9.3,
+        author: "Historic Models",
+        tags: ["城堡", "中世纪", "建筑", "游戏场景"],
+        date: "2024-01-20",
+        url: "https://www.cgtrader.com/3d-models/architecture/medieval-castle-complete"
+      },
+      {
+        id: 9,
+        title: "卡通风格角色",
+        description: "可爱卡通风格角色模型，包含表情动画和多种姿势，适用于动画制作和游戏开发。",
+        type: "character",
+        subtype: "animated",
+        platform: "turbosquid",
+        image: "https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=1200&h=800&fit=crop",
+        views: 17600,
+        likes: 897,
+        quality: 8.6,
+        author: "Cartoon Studio",
+        tags: ["卡通", "角色", "动画", "可爱"],
+        date: "2024-02-08",
+        url: "https://www.turbosquid.com/3d-models/cartoon-character-animated"
+      },
+      {
+        id: 10,
+        title: "科幻家具套组",
+        description: "未来主义风格家具套组，包含沙发、桌子、灯具等多种元素，附带PBR材质。",
+        type: "furniture",
+        subtype: "highpoly",
+        platform: "free3d",
+        image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=800&fit=crop",
+        views: 8900,
+        likes: 456,
+        quality: 8.4,
+        author: "Furniture Design",
+        tags: ["家具", "科幻", "室内", "PBR材质"],
+        date: "2024-02-18",
+        url: "https://free3d.com/3d-model/futuristic-furniture-pack"
+      },
+      {
+        id: 11,
+        title: "自然树木集合",
+        description: "高质量树木模型集合，包含多种类型的树木，附带季节变化材质，适用于环境设计。",
+        type: "nature",
+        subtype: "highpoly",
+        platform: "surfcg",
+        image: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=800&fit=crop",
+        views: 14300,
+        likes: 723,
+        quality: 8.8,
+        author: "Nature Assets Pro",
+        tags: ["树木", "自然", "环境", "季节变化"],
+        date: "2024-01-30",
+        url: "https://www.surfcg.com/model/tree-collection-nature"
+      },
+      {
+        id: 12,
+        title: "机械手臂模型",
+        description: "高精度机械手臂模型，包含完整的关节运动系统，适用于工业设计和动画制作。",
+        type: "weapon",
+        subtype: "highpoly",
+        platform: "sketchfab",
+        image: "https://images.unsplash.com/photo-1589256469067-ea99122bbdc4?w=1200&h=800&fit=crop",
+        views: 10100,
+        likes: 589,
+        quality: 8.7,
+        author: "Mechanical Designs",
+        tags: ["机械", "手臂", "工业设计", "高精度"],
+        date: "2024-02-12",
+        url: "https://sketchfab.com/models/mechanical-arm-robot"
+      }
+    ];
+
+    // 应用程序状态
+    let currentState = {
+      query: '',
+      filter: 'all',
+      platform: 'surfcg',
+      type: 'all',
+      sort: 'relevance',
+      currentPage: 1,
+      itemsPerPage: 12,
+      currentResults: []
+    };
+
+    // DOM元素
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const filterTags = document.querySelectorAll('.filter-tag');
+    const platformItems = document.querySelectorAll('.platform-item');
+    const typeItems = document.querySelectorAll('.type-item');
+    const trendingItems = document.querySelectorAll('.trending-item');
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    const imageGrid = document.getElementById('imageGrid');
+    const resultsCount = document.getElementById('resultsCount');
+    const searchLoader = document.getElementById('searchLoader');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const imageModal = document.getElementById('imageModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalBody = document.getElementById('modalBody');
+    
+    // 主题切换元素
+    const darkBtn = document.getElementById('darkBtn');
+    const lightBtn = document.getElementById('lightBtn');
+    const body = document.body;
+
+    // 初始化应用
+    function initApp() {
+      // 加载保存的主题
+      loadTheme();
+      
+      // 显示初始结果
+      currentState.currentResults = [...modelResources];
+      updateResults();
+      
+      // 事件监听器
+      searchBtn.addEventListener('click', performSearch);
+      searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performSearch();
+      });
+      
+      // 过滤器事件
+      filterTags.forEach(tag => {
+        tag.addEventListener('click', () => {
+          filterTags.forEach(t => t.classList.remove('active'));
+          tag.classList.add('active');
+          currentState.filter = tag.dataset.filter;
+          performSearch();
+        });
+      });
+      
+      // 平台选择事件
+      platformItems.forEach(item => {
+        item.addEventListener('click', () => {
+          platformItems.forEach(p => p.classList.remove('active'));
+          item.classList.add('active');
+          currentState.platform = item.dataset.platform;
+          performSearch();
+        });
+      });
+      
+      // 类型选择事件
+      typeItems.forEach(item => {
+        item.addEventListener('click', () => {
+          typeItems.forEach(t => t.classList.remove('active'));
+          item.classList.add('active');
+          currentState.type = item.dataset.type;
+          performSearch();
+        });
+      });
+      
+      // 热门搜索事件
+      trendingItems.forEach(item => {
+        item.addEventListener('click', () => {
+          const query = item.dataset.query;
+          searchInput.value = query;
+          currentState.query = query;
+          performSearch();
+        });
+      });
+      
+      // 排序按钮事件
+      sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          sortButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentState.sort = btn.dataset.sort;
+          performSearch();
+        });
+      });
+      
+      // 加载更多事件
+      loadMoreBtn.addEventListener('click', loadMore);
+      
+      // 模态框关闭事件
+      modalClose.addEventListener('click', () => {
+        imageModal.classList.remove('active');
+      });
+      
+      // 点击模态框外部关闭
+      imageModal.addEventListener('click', (e) => {
+        if (e.target === imageModal) {
+          imageModal.classList.remove('active');
+        }
+      });
+      
+      // 主题切换事件
+      darkBtn.addEventListener('click', () => setTheme('dark'));
+      lightBtn.addEventListener('click', () => setTheme('light'));
+      
+      // 示例搜索提示
+      const searchExamples = [
+        "科幻机甲角色",
+        "游戏场景建筑",
+        "PBR材质模型",
+        "动画角色绑定",
+        "概念设计参考"
+      ];
+      
+      let exampleIndex = 0;
+      setInterval(() => {
+        searchInput.placeholder = `搜索 ${searchExamples[exampleIndex]}...`;
+        exampleIndex = (exampleIndex + 1) % searchExamples.length;
+      }, 3000);
+    }
+    
+    // 设置主题
+    function setTheme(theme) {
+      body.classList.remove('light-mode', 'dark-mode');
+      body.classList.add(`${theme}-mode`);
+      
+      // 更新按钮状态
+      darkBtn.classList.remove('active');
+      lightBtn.classList.remove('active');
+      if (theme === 'dark') {
+        darkBtn.classList.add('active');
+      } else {
+        lightBtn.classList.add('active');
+      }
+      
+      // 保存到localStorage
+      localStorage.setItem('theme', theme);
+    }
+    
+    // 加载保存的主题
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      setTheme(savedTheme);
+    }
+    
+    // 执行搜索
+    function performSearch() {
+      currentState.query = searchInput.value.trim();
+      currentState.currentPage = 1;
+      
+      // 显示加载状态
+      searchLoader.classList.add('active');
+      imageGrid.innerHTML = '';
+      
+      // 模拟网络延迟
+      setTimeout(() => {
+        filterResults();
+        searchLoader.classList.remove('active');
+      }, 800);
+    }
+    
+    // 过滤结果
+    function filterResults() {
+      let results = [...modelResources];
+      
+      // 按关键词过滤
+      if (currentState.query) {
+        const query = currentState.query.toLowerCase();
+        results = results.filter(item => 
+          item.title.toLowerCase().includes(query) ||
+          item.description.toLowerCase().includes(query) ||
+          item.tags.some(tag => tag.toLowerCase().includes(query)) ||
+          item.author.toLowerCase().includes(query)
+        );
+      }
+      
+      // 按类型过滤
+      if (currentState.filter !== 'all') {
+        results = results.filter(item => item.type === currentState.filter);
+      }
+      
+      // 按平台过滤
+      if (currentState.platform !== 'all') {
+        results = results.filter(item => item.platform === currentState.platform);
+      }
+      
+      // 按模型类型过滤
+      if (currentState.type !== 'all') {
+        results = results.filter(item => item.subtype === currentState.type);
+      }
+      
+      // 排序
+      results = sortResults(results, currentState.sort);
+      
+      currentState.currentResults = results;
+      updateResults();
+    }
+    
+    // 排序结果
+    function sortResults(results, sortType) {
+      const sorted = [...results];
+      
+      switch(sortType) {
+        case 'popular':
+          sorted.sort((a, b) => b.views - a.views);
+          break;
+        case 'newest':
+          sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+          break;
+        case 'quality':
+          sorted.sort((a, b) => b.quality - a.quality);
+          break;
+        case 'relevance':
+        default:
+          // 默认按相关度（质量+热度加权）
+          sorted.sort((a, b) => {
+            const scoreA = (a.quality * 0.6) + (a.views / 10000 * 0.4);
+            const scoreB = (b.quality * 0.6) + (b.views / 10000 * 0.4);
+            return scoreB - scoreA;
+          });
+      }
+      
+      return sorted;
+    }
+    
+    // 更新结果显示
+    function updateResults() {
+      const startIndex = (currentState.currentPage - 1) * currentState.itemsPerPage;
+      const endIndex = startIndex + currentState.itemsPerPage;
+      const pageResults = currentState.currentResults.slice(startIndex, endIndex);
+      
+      // 更新计数
+      resultsCount.textContent = `显示 ${pageResults.length} 个结果 (共 ${currentState.currentResults.length} 个)`;
+      
+      // 清空网格
+      imageGrid.innerHTML = '';
+      
+      // 添加结果卡片
+      pageResults.forEach(item => {
+        const card = createImageCard(item);
+        imageGrid.appendChild(card);
+      });
+      
+      // 控制加载更多按钮显示
+      if (endIndex >= currentState.currentResults.length) {
+        loadMoreBtn.style.display = 'none';
+      } else {
+        loadMoreBtn.style.display = 'block';
+      }
+    }
+    
+    // 创建图片卡片 - 采用上一个版本的高级设计
+    function createImageCard(item) {
+      const card = document.createElement('div');
+      card.className = 'image-card';
+      card.dataset.id = item.id;
+      
+      const platformIcons = {
+        surfcg: '🌊',
+        sketchfab: '🎯',
+        cgtrader: '💰',
+        turbosquid: '🐙',
+        free3d: '🎁'
+      };
+      
+      card.innerHTML = `
+        <div class="image-container">
+          <img src="${item.image}" alt="${item.title}" class="image-preview" loading="lazy">
+          <div class="image-badge">⭐ ${item.quality.toFixed(1)}</div>
+          <div class="image-overlay">
+            <div class="image-info">
+              <div class="image-title">${item.title}</div>
+              <div class="image-desc">${item.description}</div>
+              <div class="image-meta">
+                <div class="image-source">
+                  <span class="source-icon">${platformIcons[item.platform] || '🌐'}</span>
+                  <span class="source-name">${item.platform}</span>
+                </div>
+                <div class="image-stats">
+                  <div class="stat-item">
+                    <span>👁️</span>
+                    <span>${(item.views / 1000).toFixed(1)}k</span>
+                  </div>
+                  <div class="stat-item">
+                    <span>❤️</span>
+                    <span>${item.likes}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      card.addEventListener('click', () => {
+        showImageDetails(item);
+      });
+      
+      return card;
+    }
+    
+    // 显示图片详情
+    function showImageDetails(item) {
+      const platformIcons = {
+        surfcg: '🌊',
+        sketchfab: '🎯',
+        cgtrader: '💰',
+        turbosquid: '🐙',
+        free3d: '🎁'
+      };
+      
+      const typeIcons = {
+        character: '👤',
+        environment: '🏞️',
+        vehicle: '🚗',
+        architecture: '🏛️',
+        weapon: '⚔️',
+        furniture: '🛋️',
+        nature: '🌳'
+      };
+      
+      modalBody.innerHTML = `
+        <div class="modal-image">
+          <img src="${item.image}" alt="${item.title}">
+        </div>
+        <div class="modal-info">
+          <div class="modal-title">${item.title}</div>
+          <div class="modal-desc">${item.description}</div>
+          
+          <div class="modal-meta">
+            <div class="meta-item">
+              <div class="meta-label">平台</div>
+              <div class="meta-value">
+                <span class="meta-badge">
+                  ${platformIcons[item.platform] || '🌐'}
+                  ${item.platform.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">类型</div>
+              <div class="meta-value">
+                <span class="meta-badge">
+                  ${typeIcons[item.type] || '📦'}
+                  ${getTypeName(item.type)}
+                </span>
+              </div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">质量评分</div>
+              <div class="meta-value" style="font-size: 24px; color: var(--primary);">
+                ⭐ ${item.quality.toFixed(1)}/10
+              </div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">作者</div>
+              <div class="meta-value">${item.author}</div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">发布日期</div>
+              <div class="meta-value">${item.date}</div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">浏览次数</div>
+              <div class="meta-value">${item.views.toLocaleString()}</div>
+            </div>
+            
+            <div class="meta-item">
+              <div class="meta-label">标签</div>
+              <div class="meta-value">
+                ${item.tags.map(tag => `<span style="background: var(--bg); padding: 8px 16px; border-radius: 20px; margin-right: 8px; font-size: 13px; border: 1px solid var(--border);">${tag}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="action-btn" onclick="window.open('${item.url}', '_blank')">
+              <span>🌐</span>
+              访问平台查看详情
+            </button>
+            <button class="action-btn secondary" onclick="saveAsReference(${item.id})">
+              <span>⭐</span>
+              保存为参考
+            </button>
+          </div>
+        </div>
+      `;
+      
+      imageModal.classList.add('active');
+    }
+    
+    // 加载更多
+    function loadMore() {
+      currentState.currentPage++;
+      updateResults();
+      
+      // 滚动到加载的新内容
+      const newCards = imageGrid.children;
+      if (newCards.length > 0) {
+        const lastCard = newCards[newCards.length - 1];
+        lastCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }
+    }
+    
+    // 工具函数
+    function getTypeName(type) {
+      const typeNames = {
+        character: '角色模型',
+        environment: '场景环境',
+        vehicle: '载具模型',
+        architecture: '建筑模型',
+        weapon: '武器模型',
+        furniture: '家具模型',
+        nature: '自然环境'
+      };
+      return typeNames[type] || type;
+    }
+    
+    // 保存为参考
+    function saveAsReference(id) {
+      const item = modelResources.find(m => m.id === id);
+      if (item) {
+        // 模拟保存到本地存储
+        const savedItems = JSON.parse(localStorage.getItem('3d_references') || '[]');
+        if (!savedItems.some(saved => saved.id === id)) {
+          savedItems.push(item);
+          localStorage.setItem('3d_references', JSON.stringify(savedItems));
+          
+          // 显示高级提示
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
+            z-index: 3000;
+            animation: slideIn 0.3s ease;
+            font-weight: 600;
+          `;
+          notification.innerHTML = `✅ 已将 "${item.title}" 保存为参考`;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+          }, 3000);
+        }
+      }
+    }
+    
+    // 启动应用
+    initApp();
+  </script>
+</body>
+</html>
